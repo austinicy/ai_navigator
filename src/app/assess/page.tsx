@@ -4,6 +4,8 @@ import { useState, useCallback, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { ChatPanel } from "@/components/assess/ChatPanel";
 import { ScorecardPanel } from "@/components/assess/ScorecardPanel";
+import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
+import { useAssessment } from "@/hooks/useAssessment";
 import { AssessmentDelta } from "@/lib/assessment/types";
 
 function AssessPageContent() {
@@ -12,6 +14,7 @@ function AssessPageContent() {
   const [delta, setDelta] = useState<AssessmentDelta | null>(null);
   const [documentCount, setDocumentCount] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
+  const { saveAssessment } = useAssessment();
 
   useEffect(() => {
     if (isDemo) {
@@ -36,6 +39,11 @@ function AssessPageContent() {
         .catch(console.error);
     }
   }, [isDemo]);
+
+  // Persist assessment state so the report page can read it
+  useEffect(() => {
+    if (delta) saveAssessment(delta);
+  }, [delta, saveAssessment]);
 
   const handleAssessmentUpdate = useCallback((newDelta: AssessmentDelta | null) => {
     setDelta(newDelta);
@@ -84,8 +92,10 @@ function AssessPageContent() {
 
 export default function AssessPage() {
   return (
-    <Suspense fallback={<div className="h-screen flex items-center justify-center text-muted-foreground">Loading…</div>}>
-      <AssessPageContent />
-    </Suspense>
+    <ErrorBoundary>
+      <Suspense fallback={<div className="h-screen flex items-center justify-center text-muted-foreground">Loading…</div>}>
+        <AssessPageContent />
+      </Suspense>
+    </ErrorBoundary>
   );
 }

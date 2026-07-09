@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OverviewTab } from "@/components/report/OverviewTab";
 import { DeepDiveTab } from "@/components/report/DeepDiveTab";
+import { RoadmapTab } from "@/components/report/RoadmapTab";
 import { AssessmentDelta } from "@/lib/assessment/types";
 
 export default function ReportPage() {
@@ -68,9 +69,11 @@ export default function ReportPage() {
             <DeepDiveTab delta={delta} />
           </TabsContent>
           <TabsContent value="roadmap" className="mt-6">
-            <div className="text-center text-muted-foreground py-12">
-              Roadmap generation will be added in Task 12
-            </div>
+            <RoadmapTab
+              delta={delta}
+              orgName="Acme Corporation"
+              industry="Manufacturing"
+            />
           </TabsContent>
           <TabsContent value="export" className="mt-6">
             <div className="text-center text-muted-foreground py-12">

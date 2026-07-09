@@ -1,0 +1,171 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { AssessmentDelta } from "@/lib/assessment/types";
+import { Roadmap, RoadmapAction } from "@/lib/roadmap/types";
+import { PhaseTimeline } from "@/components/shared/PhaseTimeline";
+import { GradientCard } from "@/components/shared/GradientCard";
+
+interface RoadmapTabProps {
+  delta: AssessmentDelta;
+  orgName: string;
+  industry: string;
+}
+
+const effortColors: Record<string, string> = {
+  low: "text-emerald-400 bg-emerald-400/10",
+  medium: "text-amber-400 bg-amber-400/10",
+  high: "text-red-400 bg-red-400/10",
+};
+
+const impactColors: Record<string, string> = {
+  low: "text-muted-foreground",
+  medium: "text-amber-400",
+  high: "text-emerald-400",
+};
+
+function ActionCard({ action }: { action: RoadmapAction }) {
+  return (
+    <div className="border border-border rounded-lg p-4 hover:border-violet-500/30 transition-colors">
+      <div className="flex items-start justify-between mb-2">
+        <h4 className="text-sm font-semibold text-foreground">{action.title}</h4>
+        <div className="flex gap-1 shrink-0 ml-2">
+          <span className={`text-[10px] px-1.5 py-0.5 rounded ${effortColors[action.effort]}`}>
+            {action.effort} effort
+          </span>
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground mb-2">{action.description}</p>
+      {action.successMetrics.length > 0 && (
+        <div className="border-t border-border pt-2 mt-2">
+          <p className="text-[10px] text-muted-foreground mb-1">Success Metrics:</p>
+          {action.successMetrics.map((metric, i) => (
+            <p key={i} className="text-[11px] text-foreground/70 pl-2">• {metric}</p>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function RoadmapTab({ delta, orgName, industry }: RoadmapTabProps) {
+  const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activePhase, setActivePhase] = useState(0);
+
+  useEffect(() => {
+    const sessionData = {
+      // Construct minimal session for roadmap API
+      dimensions: delta.dimensions,
+      aiReadiness: delta.aiReadiness,
+      orgProfile: { name: orgName, industry },
+      isComplete: true,
+      id: "report",
+      frameworkVersion: "v1.0",
+      conversationHistory: [],
+      documents: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    fetch("/api/roadmap", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(sessionData),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setRoadmap(data);
+        setIsLoading(false);
+      })
+      .catch(() => setIsLoading(false));
+  }, [delta, orgName, industry]);
+
+  if (isLoading) {
+    return (
+      <div className="text-center py-12">
+        <div className="flex justify-center gap-1 mb-4">
+          <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" />
+          <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce [animation-delay:0.1s]" />
+          <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce [animation-delay:0.2s]" />
+        </div>
+        <p className="text-muted-foreground text-sm">Generating personalized roadmap...</p>
+      </div>
+    );
+  }
+
+  if (!roadmap || roadmap.phases.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-muted-foreground">Unable to generate roadmap. Please try again.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <PhaseTimeline phases={roadmap.phases} activePhase={activePhase} />
+
+      {/* Phase selector buttons */}
+      <div className="flex gap-2">
+        {roadmap.phases.map((phase, i) => (
+          <button
+            key={phase.id}
+            onClick={() => setActivePhase(i)}
+            className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+              i === activePhase
+                ? "border-violet-500/60 bg-violet-500/10 text-violet-300"
+                : "border-border bg-card text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Phase {i + 1}: {phase.name}
+          </button>
+        ))}
+      </div>
+
+      {/* Active phase actions */}
+      {roadmap.phases[activePhase] && (
+        <div>
+          <p className="text-sm text-muted-foreground mb-3">
+            {roadmap.phases[activePhase].description}
+          </p>
+          <div className="grid gap-3">
+            {roadmap.phases[activePhase].actions.map((action) => (
+              <ActionCard key={action.id} action={action} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Quick wins */}
+      {roadmap.quickWins.length > 0 && (
+        <GradientCard>
+          <h3 className="text-sm font-semibold text-foreground mb-3">⚡ Quick Wins</h3>
+          <div className="grid md:grid-cols-2 gap-2">
+            {roadmap.quickWins.map((qw) => (
+              <div key={qw.id} className="border border-emerald-500/20 rounded-lg p-3 bg-emerald-500/5">
+                <h4 className="text-xs font-semibold text-foreground">{qw.title}</h4>
+                <p className="text-[10px] text-muted-foreground mt-0.5">{qw.description}</p>
+              </div>
+            ))}
+          </div>
+        </GradientCard>
+      )}
+
+      {/* Critical gaps */}
+      {roadmap.criticalGaps.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-foreground mb-2">🚨 Critical Gaps Addressed</h3>
+          <ul className="space-y-1">
+            {roadmap.criticalGaps.map((gap, i) => (
+              <li key={i} className="text-xs text-red-400/80 flex items-start gap-1.5">
+                <span className="shrink-0">•</span>
+                <span>{gap}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}

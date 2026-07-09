@@ -9,7 +9,7 @@
     "dev": "next dev",
     "build": "next build",
     "build:mcp": "tsc src/mcp/server.ts src/mcp/cli.ts --outDir dist --rootDir src --module commonjs --target es2020 --esModuleInterop --resolveJsonModule --moduleResolution node",
-    "mcp": "node dist/mcp/server.js",
+    "mcp": "node dist/mcp/cli.js",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",

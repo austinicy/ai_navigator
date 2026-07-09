@@ -17,24 +17,45 @@ The `?demo=true` query param on `/assess` and `/report` loads a pre-populated **
 ### Prerequisites
 
 - Node.js 20+
-- An Anthropic API key (for live chat, document signal extraction, and roadmap generation)
+- An API key for at least one LLM provider (any one enables the full live flow):
+  - **Anthropic** — get one at https://console.anthropic.com/
+  - **OpenAI** — get one at https://platform.openai.com/api-keys
+  - **DeepSeek** — get one at https://platform.deepseek.com/
 
 ### Install & run
 
 ```bash
 npm install
-cp .env.example .env.local   # then add your ANTHROPIC_API_KEY
+cp .env.example .env.local   # then add one provider key
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
+### Choosing a provider
+
+The app supports three LLM providers, selected by the `LLM_PROVIDER` env var
+(`anthropic`, `openai`, or `deepseek`). If `LLM_PROVIDER` is unset, the app
+auto-selects by key presence in this order: anthropic → openai → deepseek.
+Any single provider key is enough to run the live chat, document signal
+extraction, and roadmap generation.
+
+Default models (override with `LLM_MODEL`):
+
+| Provider  | Default model      |
+|-----------|--------------------|
+| anthropic | `claude-sonnet-5`  |
+| openai    | `gpt-4o`           |
+| deepseek  | `deepseek-chat`    |
+
+DeepSeek is accessed via the OpenAI-compatible SDK with `baseURL=https://api.deepseek.com`.
+
 ### Without an API key
 
-The app runs without `ANTHROPIC_API_KEY`, but the live Claude features degrade gracefully:
+The app runs without any API key, but the live LLM features degrade gracefully:
 
 - Landing page, demo scorecard (`/assess?demo=true`), and the report's Overview / Deep Dive / Export tabs all work (they use the demo dataset).
-- The chat (`/api/chat`), document upload (`/api/upload`), and roadmap generation (`/api/roadmap`) call Claude and will return errors — the UI shows friendly fallbacks (e.g. "Unable to generate roadmap") rather than crashing.
+- The chat (`/api/chat`), document upload (`/api/upload`), and roadmap generation (`/api/roadmap`) call the LLM and will return errors — the UI shows friendly fallbacks (e.g. "Unable to generate roadmap") rather than crashing.
 
 So `npm run dev` + open `/assess?demo=true` is the quickest way to see the product without a key.
 
@@ -52,7 +73,7 @@ npm run mcp        # starts the stdio MCP server
 
 - **Next.js 16** (App Router) + **React 19** + **TypeScript** (strict)
 - **Tailwind CSS v4** (dark neon theme) + **shadcn/ui** + **Recharts**
-- **Claude API** (`@anthropic-ai/sdk`) with tool use — model `claude-sonnet-5`
+- **Multi-provider LLM** — Anthropic (`@anthropic-ai/sdk`), OpenAI + DeepSeek (`openai` SDK) with tool use, selected by `LLM_PROVIDER` env var
 - **pdf-parse** + **mammoth** for document extraction
 - **@modelcontextprotocol/sdk** for the MCP server
 - **vitest** for tests

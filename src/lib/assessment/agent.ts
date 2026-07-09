@@ -1,10 +1,9 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { chat, assistantToolCallMessage, toolResultMessage } from "../llm/client";
+import type { LLMMessage } from "../llm/types";
 import { agentTools } from "./tools";
 import { AssessmentEngine } from "./engine";
 import { loadFramework } from "../framework/config";
-import { AgentResponse, AssessmentDelta, ChatMessage } from "./types";
-
-const client = new Anthropic();
+import { AgentResponse } from "./types";
 
 const SYSTEM_PROMPT = `You are an expert Digital Transformation Consultant conducting a maturity assessment. Your goal is to assess ALL 7 dimensions to sufficient confidence.
 
@@ -70,67 +69,87 @@ export async function runAgentTurn(
   const session = engine.getSession();
   const systemPrompt = buildSystemPrompt(engine);
 
-  const messages: Anthropic.MessageParam[] = session.conversationHistory.map(
-    (msg) => ({
-      role: msg.role as "user" | "assistant",
-      content: msg.content,
-    })
-  );
-
+  // Build the provider-agnostic messages array from conversation history + the
+  // current user message. The agent owns this array across the loop rounds.
+  const messages: LLMMessage[] = session.conversationHistory.map((msg) => ({
+    role: msg.role,
+    content: msg.content,
+  }));
   messages.push({ role: "user", content: userMessage });
 
-  const response = await client.messages.create({
-    model: "claude-sonnet-5",
-    max_tokens: 2048,
-    system: systemPrompt,
-    messages,
-    tools: agentTools.map((t) => ({
-      name: t.name,
-      description: t.description,
-      input_schema: t.input_schema,
-    })),
-  });
+  // C1 fix: persist the user message so the next turn has memory.
+  engine.addConversationMessage("user", userMessage);
 
   let assistantMessage = "";
   const toolCallResults: AgentResponse["toolCalls"] = [];
 
-  for (const block of response.content) {
-    if (block.type === "text") {
-      assistantMessage += block.text;
-    } else if (block.type === "tool_use") {
-      const input = block.input as Record<string, unknown>;
-      switch (block.name) {
+  // Tool-calling loop: call chat, execute tool calls, send results back, repeat
+  // until the model signals end_turn (or no more tool calls).
+  // C2 fix: tool results are round-tripped back to the model.
+  const MAX_ROUNDS = 10;
+  for (let round = 0; round < MAX_ROUNDS; round++) {
+    const result = await chat(messages, agentTools, {
+      system: systemPrompt,
+      maxTokens: 2048,
+    });
+
+    assistantMessage += result.text;
+
+    // Append the assistant turn (text + any tool calls) to the messages array.
+    messages.push(assistantToolCallMessage(result));
+
+    // No tool calls → the model is done talking this turn.
+    if (result.toolCalls.length === 0 || result.stopReason !== "tool_use") {
+      break;
+    }
+
+    // Execute each tool call and append a tool-result message back.
+    for (const tc of result.toolCalls) {
+      const input = tc.input;
+      let output: Record<string, unknown>;
+
+      switch (tc.name) {
         case "calculate_score": {
           engine.updateDimensionScore(
             input.dimensionId as string,
             input.criterionScores as Record<string, number>,
             input.gaps as string[]
           );
-          toolCallResults.push({ tool: block.name, input, output: { success: true } });
+          output = { success: true };
           break;
         }
         case "update_org_profile": {
-          engine.updateOrgProfile(input as Record<string, unknown>);
-          toolCallResults.push({ tool: block.name, input, output: { success: true } });
+          engine.updateOrgProfile(input);
+          output = { success: true };
           break;
         }
         case "estimate_benchmark": {
-          toolCallResults.push({
-            tool: block.name,
-            input,
-            output: {
-              note: "Benchmark estimation included in assessment context",
-              industry: input.industry,
-            },
-          });
+          output = {
+            note: "Benchmark estimation included in assessment context",
+            industry: input.industry,
+          };
           break;
         }
         case "generate_roadmap": {
-          toolCallResults.push({ tool: block.name, input, output: { triggered: true } });
+          output = { triggered: true };
+          break;
+        }
+        default: {
+          output = { error: `Unknown tool: ${tc.name}` };
           break;
         }
       }
+
+      toolCallResults.push({ tool: tc.name, input, output });
+      messages.push(toolResultMessage(tc.id, tc.name, JSON.stringify(output)));
     }
+    // Loop continues → the model gets the tool results and can decide to call
+    // more tools or produce a final text response.
+  }
+
+  // C1 fix: persist the final assistant message for next-turn memory.
+  if (assistantMessage) {
+    engine.addConversationMessage("assistant", assistantMessage);
   }
 
   const isComplete = engine.checkComplete();

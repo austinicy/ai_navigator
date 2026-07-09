@@ -144,6 +144,17 @@ export class AssessmentEngine {
     this.session.updatedAt = Date.now();
   }
 
+  /** Persist a user or assistant message to the session's conversation history. */
+  addConversationMessage(role: "user" | "assistant", content: string): void {
+    this.session.conversationHistory.push({
+      id: uuidv4(),
+      role,
+      content,
+      timestamp: Date.now(),
+    });
+    this.session.updatedAt = Date.now();
+  }
+
   private calculateDimScore(dimensionId: string): number {
     const dim = this.session.dimensions[dimensionId];
     const dimConfig = getDimensionById(this.config, dimensionId);

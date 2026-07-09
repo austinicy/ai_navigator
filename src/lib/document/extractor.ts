@@ -1,8 +1,6 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { complete } from "../llm/client";
 import { loadFramework } from "../framework/config";
 import { Evidence } from "../assessment/types";
-
-const client = new Anthropic();
 
 export function parseSignalsJson(text: string): Evidence[] {
   try {
@@ -33,10 +31,8 @@ export async function extractSignals(
     .map((d) => `- ${d.id}: ${d.name} (${d.criteria.map((c) => c.id).join(", ")})`)
     .join("\n");
 
-  const response = await client.messages.create({
-    model: "claude-sonnet-5",
-    max_tokens: 2048,
-    messages: [
+  const text = await complete(
+    [
       {
         role: "user",
         content: `Analyze this document and extract signals relevant to digital transformation and AI maturity assessment.
@@ -58,10 +54,8 @@ Extract signals as JSON array:
 Only extract signals you can confidently identify. Return empty array if no relevant signals found.`,
       },
     ],
-  });
-
-  const text =
-    response.content[0].type === "text" ? response.content[0].text : "[]";
+    { maxTokens: 2048 }
+  );
 
   return parseSignalsJson(text);
 }

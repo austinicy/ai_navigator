@@ -1,9 +1,7 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { complete } from "../llm/client";
 import { AssessmentSession } from "../assessment/types";
 import { FrameworkConfig } from "../framework/types";
 import { Roadmap, RoadmapPhase, RoadmapAction } from "./types";
-
-const client = new Anthropic();
 
 export function parseRoadmapJson(
   text: string,
@@ -61,10 +59,8 @@ export async function generateRoadmap(
 
   const profile = session.orgProfile;
 
-  const response = await client.messages.create({
-    model: "claude-sonnet-5",
-    max_tokens: 4096,
-    messages: [
+  const text = await complete(
+    [
       {
         role: "user",
         content: `Generate a personalized digital transformation roadmap for this organization.
@@ -123,10 +119,8 @@ Rules:
 8. Quick wins: low effort, high impact items from any dimension.`,
       },
     ],
-  });
-
-  const text =
-    response.content[0].type === "text" ? response.content[0].text : "{}";
+    { maxTokens: 4096 }
+  );
 
   return parseRoadmapJson(text, session, config);
 }

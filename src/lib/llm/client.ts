@@ -298,7 +298,9 @@ export async function complete(
     }
     const response = await openai.chat.completions.create({
       model,
-      max_tokens: maxTokens,
+      // max_completion_tokens (not the deprecated max_tokens) — required for
+      // o-series models, accepted by gpt-4o and DeepSeek's OpenAI-compatible API.
+      max_completion_tokens: maxTokens,
       messages: apiMessages,
     });
     return response.choices[0]?.message?.content ?? "";
@@ -349,7 +351,7 @@ export async function chat(
     }
     const response = await openai.chat.completions.create({
       model,
-      max_tokens: maxTokens,
+      max_completion_tokens: maxTokens,
       messages: apiMessages,
       tools: tools.map(toOpenAITool),
     });

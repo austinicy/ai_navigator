@@ -30,7 +30,7 @@ No component tests were added. `@testing-library/react` is NOT installed (only `
 
 ## Commits
 
-- `<SHA>` — `feat: add landing page with hero section and dual CTA entry points`
+- `18b0446` — `feat: add landing page with hero section and dual CTA entry points`
   (Co-Authored-By: Claude <noreply@anthropic.com>)
 
 ## Concerns

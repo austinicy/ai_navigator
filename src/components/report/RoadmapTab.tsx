@@ -75,7 +75,13 @@ export function RoadmapTab({ delta, orgName, industry }: RoadmapTabProps) {
     })
       .then((res) => res.json())
       .then((data) => {
-        setRoadmap(data);
+        // Only store a well-formed Roadmap. An error response (e.g. HTTP 500
+        // from a missing API key) has body { error: "..." } with no `phases`,
+        // which would crash the render guard below — leave roadmap null so
+        // the existing !roadmap guard shows the graceful fallback message.
+        if (data && Array.isArray(data.phases)) {
+          setRoadmap(data);
+        }
         setIsLoading(false);
       })
       .catch(() => setIsLoading(false));

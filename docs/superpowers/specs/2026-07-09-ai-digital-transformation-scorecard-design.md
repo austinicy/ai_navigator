@@ -27,9 +27,9 @@ An AI-native assessment and roadmap platform that evaluates organizations, bench
 
 ---
 
-## 3. Approach: Adaptive Framework
+## 3. Approach: Adaptive Framework with Agentic Assessment
 
-We chose **Approach 2: Adaptive Framework** — a structured maturity backbone combined with AI conversational reasoning.
+We chose **Approach 2: Adaptive Framework** — a structured maturity backbone combined with AI conversational reasoning — extended with agentic behavior for the assessment process.
 
 **Why this approach:**
 - Structured enough to demo reliably (fixed dimensions = predictable scorecard rendering)
@@ -38,6 +38,60 @@ We chose **Approach 2: Adaptive Framework** — a structured maturity backbone c
 - Extensible post-hackathon (add benchmarking, multi-user, knowledge base later)
 
 **Framework as living system:** The framework definition lives as a configurable JSON structure, not hardcoded. Updating the framework (adding dimensions, refining levels, changing weights) requires no code changes — the AI reads the framework at runtime and adapts its questioning and scoring accordingly.
+
+### What Makes It Agentic
+
+The build challenge specifies an **"agentic platform"** — this is not just an AI chatbot that scores answers. The assessment agent exhibits three agentic behaviors:
+
+1. **Goal-directed assessment**: The agent has a goal (assess all 7 dimensions to sufficient confidence). It autonomously decides which dimension to probe next, what follow-up questions to ask, and when to move on. It doesn't just respond to user input — it drives the assessment forward.
+
+2. **Tool use**: The agent uses tools to gather data beyond conversation:
+   - `read_document` — extract signals from uploaded documents
+   - `search_knowledge` — query the framework knowledge base for assessment criteria and level descriptors
+   - `calculate_score` — aggregate evidence into dimension scores using the scoring methodology
+   - `estimate_benchmark` — generate industry benchmarks from LLM knowledge for comparison
+   - `generate_roadmap` — create a personalized transformation roadmap
+
+3. **Multi-step reasoning**: The agent reasons across steps — it connects what it learned in one dimension to questions in another ("You mentioned your cloud migration is 60% complete — that affects your Data & AI capabilities. How are you handling data pipeline modernization alongside cloud migration?").
+
+### Continuous Assessment Model
+
+The build challenge specifies **"continuously assesses"** — not a one-time snapshot. The hackathon builds the assessment engine; the continuous model is designed into the architecture:
+
+**Hackathon (point-in-time assessment):**
+- User completes a single assessment session
+- Session generates a snapshot scorecard and roadmap
+
+**Designed for continuous (post-hackathon extension points):**
+- **Re-assessment triggers**: Scheduled (quarterly), event-driven (new technology deployed, org restructure), or user-initiated
+- **Delta detection**: When new data arrives (new document uploaded, new conversation), the agent re-evaluates affected dimensions and highlights changes
+- **Change tracking**: Each assessment is stored with timestamp; the dashboard shows score evolution over time
+- **Living scorecard**: Dimensions update as new evidence is gathered, not just during formal assessment sessions
+- **Progress monitoring**: The roadmap becomes a living document — initiatives are tracked, completion updates the scorecard, new gaps are surfaced automatically
+
+**Architecture support for continuous assessment:**
+- Every assessment produces a versioned snapshot (not just a final state)
+- The structured output format includes `delta` fields for change detection
+- The framework config supports `reassessment_criteria` — thresholds that trigger re-evaluation
+- Session state is designed to be persistable to a database (the API layer abstracts storage)
+
+### Personalized Roadmap Generation
+
+"Personalized" means the roadmap adapts to the organization's specific context, not just its gaps:
+
+**Personalization inputs:**
+- **Org profile**: Industry, size, geography, regulatory environment (gathered during conversation)
+- **Current state**: Dimension scores, evidence, and gaps
+- **Existing initiatives**: What transformation work is already underway (avoids recommending what's already in progress)
+- **Constraints**: Budget limitations, timeline pressures, talent availability
+- **Industry context**: Typical transformation patterns and timelines for the org's industry
+
+**Personalization logic (in the roadmap generation prompt):**
+- Quick wins prioritized for low-maturity dimensions where high impact is achievable with moderate effort
+- Dependencies between dimensions are respected (e.g., don't recommend advanced AI use cases before data foundation is solid)
+- Existing initiatives are acknowledged and built upon, not duplicated
+- Industry-specific recommendations are included based on the org profile
+- Effort estimates are contextualized to org size and current capability level
 
 ---
 
@@ -259,7 +313,7 @@ The device's MCP client calls assessment tools directly. Both interfaces contrib
 
 **Hackathon scope note:** For the hackathon, the deliverable is the MCP tool definitions and server implementation. The voice device's own STT/TTS pipeline and client-side integration is the device owner's responsibility.
 
-### MCP Tools (for Voice Device)
+### MCP Tools (for Voice Device + Agent Use)
 
 | Tool | Description |
 |------|-------------|
@@ -268,6 +322,11 @@ The device's MCP client calls assessment tools directly. Both interfaces contrib
 | `get_scorecard` | Retrieve current dimension scores and evidence |
 | `generate_roadmap` | Trigger roadmap generation from current assessment |
 | `upload_document` | Submit a document for AI extraction |
+| `read_document` | Agent tool: extract signals from uploaded document |
+| `search_knowledge` | Agent tool: query framework knowledge base for criteria |
+| `calculate_score` | Agent tool: aggregate evidence into dimension score |
+| `estimate_benchmark` | Agent tool: generate industry benchmarks from LLM knowledge |
+| `update_org_profile` | Agent tool: update org context (industry, size, constraints) |
 
 ---
 
@@ -325,29 +384,51 @@ Tab-based layout: Overview, Deep Dive, Roadmap, Export.
 
 ## 7. LLM/AI System Design
 
-### LLM Chain Architecture
+### LLM Chain Architecture (Agentic)
 
 ```
 Conversation Input (text from chat or voice device)
        ↓
 System Prompt (role: Digital Transformation Consultant,
                framework config loaded as context,
-               structured output format specified)
+               structured output format specified,
+               available tools defined)
        ↓
 Context Accumulator (conversation history +
                      extracted doc signals +
                      current scores +
-                     evidence collected)
+                     evidence collected +
+                     org profile)
        ↓
-Claude API Call → Returns TWO things:
-  1. Conversational response (text, streamed)
-  2. Structured assessment update (JSON)
+Claude API Call (with tool use) → Agent decides:
+  1. Ask a follow-up question (conversational response)
+  2. Use a tool (read_document, calculate_score, estimate_benchmark)
+  3. Move to next dimension (goal-directed navigation)
+  4. Signal assessment complete + generate roadmap
+       ↓
+Each turn returns:
+  - Conversational response (text, streamed)
+  - Structured assessment update (JSON)
+  - Tool calls (if any)
        ↓
      ┌─────┴─────┐
      ↓           ↓
   Chat UI    Scorecard UI
   (stream)   (real-time update)
 ```
+
+### Agent Tools
+
+The assessment agent has access to the following tools, enabling agentic behavior:
+
+| Tool | When the Agent Uses It | Output |
+|------|----------------------|--------|
+| `read_document` | User uploads a document; agent needs to extract signals | Extracted text + mapped dimension signals |
+| `search_knowledge` | Agent needs to reference specific level descriptors or assessment criteria for a dimension | Relevant framework criteria and level definitions |
+| `calculate_score` | Agent has gathered sufficient evidence for a dimension; needs to formalize the score | Dimension score + confidence + evidence mapping |
+| `estimate_benchmark` | Agent has an org profile (industry, size); needs industry comparison | AI-estimated industry average scores per dimension |
+| `generate_roadmap` | Assessment is complete; agent needs to produce personalized roadmap | 3-phase roadmap with prioritized actions |
+| `update_org_profile` | Agent learns about org context (industry, size, constraints) | Structured org profile stored in session |
 
 ### Structured Output Format
 
@@ -411,13 +492,28 @@ AI starts conversation already informed
 
 When documents are uploaded, the AI pre-fills relevant dimension scores and then starts the conversation by referencing document insights: "I've reviewed your strategy deck and noticed you're investing heavily in cloud. Let me ask about your data capabilities..."
 
-### Roadmap Generation
+### Roadmap Generation (Personalized)
 
-Separate LLM call once assessment is complete:
-- **Prioritization**: Lowest-scoring dimensions with highest dependency impact addressed first
-- **Phase structure**: 3 phases (0-3mo, 3-6mo, 6-12mo)
-- **Action items**: Specific, actionable recommendations per dimension
-- **Investment indicators**: Low/Medium/High effort estimates
+When assessment is complete, the agent calls `generate_roadmap` with the full assessment context:
+
+**Inputs to roadmap generation:**
+- Dimension scores + evidence + gaps
+- Org profile (industry, size, geography, regulatory environment)
+- Existing initiatives (if mentioned during conversation)
+- Constraints (budget, timeline, talent availability)
+- Industry benchmarks (AI-estimated)
+
+**Roadmap generation logic:**
+1. **Prioritization matrix**: Score gaps by (Impact × Urgency) / Effort
+   - Impact: How much improving this dimension lifts overall maturity
+   - Urgency: Whether this dimension blocks progress in other dimensions
+   - Effort: Estimated resources required, contextualized to org size
+2. **Dependency resolution**: Data foundation before AI pilots; cloud before data migration; governance before scaling AI
+3. **Quick wins first**: Low-effort, high-impact items surface in Phase 1 regardless of dimension
+4. **Existing initiative awareness**: Don't recommend what's already in progress; instead, accelerate or expand it
+5. **Phase structure**: 3 phases (0-3mo, 3-6mo, 6-12mo)
+6. **Investment indicators**: Low/Medium/High effort estimates, contextualized to org size and current capability
+7. **Success metrics**: Each recommendation includes measurable outcomes to track progress
 
 ### Voice Integration
 
@@ -448,26 +544,31 @@ Separate LLM call once assessment is complete:
 ### BUILD (3 Days)
 
 - ✅ Landing page with start assessment CTA
-- ✅ Conversational assessment (chat UI + browser TTS)
+- ✅ Agentic conversational assessment (chat UI + browser TTS) — goal-directed, tool-using agent
+- ✅ Agent tools: read_document, search_knowledge, calculate_score, estimate_benchmark, update_org_profile, generate_roadmap
 - ✅ Real-time scorecard (radar chart + dimension bars + AI Readiness sub-score)
 - ✅ Document upload + AI extraction
+- ✅ Personalized roadmap generation with prioritization matrix, dependency resolution, and success metrics
 - ✅ Assessment completion → roadmap generation
 - ✅ Final report view with PDF export
 - ✅ Demo data fallback (pre-loaded company)
 - ✅ Dark mode UI with neon gradient aesthetic
-- ✅ Framework config as JSON (evolvable)
-- ✅ MCP tool definitions for voice device
+- ✅ Framework config as JSON (evolvable, versioned)
+- ✅ MCP tool definitions for voice device + agent tools
+- ✅ Org profile capture (industry, size, constraints) for personalization
 
 ### DEFER (Post-Hackathon)
 
 - ⏳ User authentication / org accounts
-- ⏳ Multi-user / department-level assessments
-- ⏳ Industry benchmarking with real data
-- ⏳ Historical progress tracking
+- ⏳ Multi-user / department-level assessments (department heads each do their own)
+- ⏳ Industry benchmarking with real data (replace AI-estimated with actual datasets)
+- ⏳ Continuous assessment: re-assessment triggers, delta detection, progress monitoring UI
+- ⏳ Historical progress tracking with trend charts
 - ⏳ Framework admin UI
 - ⏳ PPT export
-- ⏳ Persistent database
+- ⏳ Persistent database (currently session-based)
 - ⏳ Voice device hardware integration testing
+- ⏳ Cost-benefit analysis and investment sizing for roadmap items
 
 ### 3-Day Implementation Plan
 
@@ -506,33 +607,58 @@ Separate LLM call once assessment is complete:
 
 ---
 
-## 12. Product Vision Coverage Analysis
+## 12. Product Vision & Build Challenge Coverage Analysis
 
-This section maps the 8 product vision items to the current design, identifying what's covered in the hackathon build vs. what requires post-hackathon development.
+This section maps the product vision items AND the build challenge/direction elements to the current design, identifying what's covered in the hackathon build vs. what requires post-hackathon development.
 
-### Vision Coverage Matrix
+### Build Challenge Compliance
+
+| # | Build Challenge Element | Coverage | Detail |
+|---|---|---|---|
+| 1 | **"agentic platform"** | ✅ Designed for | Agent exhibits goal-directed assessment, tool use (6 agent tools), and multi-step reasoning across dimensions. Uses Claude's tool use / function calling for agentic behavior. (Section 3 — What Makes It Agentic; Section 7 — Agent Tools) |
+| 2 | **"continuously assesses"** | ✅ Architecture supports | Hackathon: point-in-time assessment. Architecture designed for continuous extension: re-assessment triggers, delta detection, versioned snapshots, progress monitoring. (Section 3 — Continuous Assessment Model) |
+| 3 | **"organizational maturity"** | ✅ Full | 7 dimensions, 5 levels, evidence-based scoring, framework grounded in 15+ reference models |
+| 4 | **"personalized transformation roadmaps"** | ✅ Designed for | Roadmap generation uses org profile (industry, size, constraints), existing initiatives, dependency analysis, and effort-impact prioritization — not generic gap-fill. (Section 3 — Personalized Roadmap Generation; Section 7 — Roadmap Generation) |
+| 5 | **"using organizational data"** | ✅ Full | Document upload + conversational assessment |
+| 6 | **"benchmarks"** | ⚠️ Partial | AI-estimated industry benchmarks via `estimate_benchmark` tool. Credible for demo; real benchmark data post-hackathon. |
+| 7 | **"AI-driven recommendations"** | ✅ Full | LLM generates specific, prioritized recommendations per dimension with success metrics |
+
+### Build Direction Compliance
+
+| # | Build Direction Element | Coverage | Detail |
+|---|---|---|---|
+| 8 | **"AI-native"** | ✅ Full | Conversational AI is the primary interface, not a bolt-on. Agentic assessment with tool use. |
+| 9 | **"assessment and roadmap platform"** | ✅ Full | Both assessment and personalized roadmap generation are core features |
+| 10 | **"evaluates departments"** | ⚠️ Partial | Framework supports department tagging; conversation can focus on a department; no multi-department aggregation in hackathon build. Designed for multi-user department flow post-hackathon. |
+| 11 | **"benchmarks maturity"** | ⚠️ Partial | Same as #6 — AI-estimated, not real benchmark data |
+| 12 | **"identifies gaps"** | ✅ Full | Gap analysis per dimension; gaps drive roadmap prioritization |
+| 13 | **"recommends prioritized transformation actions"** | ✅ Full | Prioritization matrix (Impact × Urgency / Effort), dependency resolution, quick-win identification, existing initiative awareness. (Section 7 — Roadmap Generation) |
+
+### Product Vision Coverage Matrix
 
 | # | Vision Item | Hackathon Coverage | Post-Hackathon Coverage | Design Section |
 |---|-----------|-------------------|------------------------|----------------|
 | 1 | **Digital maturity assessments** | ✅ Full — 7 dimensions, 5 levels, evidence-based scoring, framework grounded in 15+ reference models | Continuous improvement of framework; community frameworks | Section 4 |
 | 2 | **AI readiness evaluations** | ✅ Full — AI Readiness composite sub-score across 6 components; grounded in AWS/Microsoft public rubrics | Industry-specific AI readiness benchmarks; comparison datasets | Section 4 (AI Readiness Sub-Assessment) |
 | 3 | **Department-level scorecards** | ⚠️ Partial — Framework supports department tagging; conversation can focus on a department; but no multi-user department input flow | Multi-user assessment: each department head does their own assessment; aggregated org view; department gap analysis | Section 9 (Deferred) |
-| 4 | **Industry benchmarking** | ⚠️ Partial — AI-estimated industry averages from LLM knowledge (not real benchmark data). Credible for demo but not for production. | Real benchmark dataset (partnership with research firm or crowd-sourced); percentile rankings; industry-specific profiles | Section 4 (Framework Provenance) + Section 9 (Deferred) |
-| 5 | **Transformation roadmaps** | ✅ Full — 3-phase roadmap with specific recommendations, effort indicators, prioritization logic based on gap analysis | ROI estimation; cost modeling; resource allocation; dependency mapping between initiatives | Section 7 (Roadmap Generation) |
-| 6 | **Executive dashboards** | ✅ Partial — Final report view with overview, deep dive, and roadmap tabs. Not a live/refreshable dashboard. | Persistent dashboard with live data; KPI tracking widgets; alerting; multi-org view for holding companies | Section 6 (Screen 3) |
-| 7 | **Progress tracking** | ⚠️ Minimal — Session stores current assessment; no historical comparison or trend tracking | Database-backed assessment history; trend charts; delta analysis between assessments; progress alerts | Section 9 (Deferred) |
-| 8 | **Investment prioritization recommendations** | ⚠️ Partial — Roadmap includes effort indicators (Low/Med/High) and gap-based prioritization. No cost-benefit analysis or ROI estimates. | Effort vs. Impact matrix; cost-benefit analysis; investment sizing; quick-win identification; portfolio optimization | Section 7 (Roadmap Generation) |
+| 4 | **Industry benchmarking** | ⚠️ Partial — AI-estimated industry averages from LLM knowledge via `estimate_benchmark` tool. Credible for demo but not for production. | Real benchmark dataset (partnership with research firm or crowd-sourced); percentile rankings; industry-specific profiles | Section 4 (Framework Provenance) + Section 9 (Deferred) |
+| 5 | **Transformation roadmaps** | ✅ Full — Personalized 3-phase roadmap with prioritized recommendations, effort-impact analysis, dependency resolution, existing initiative awareness, and success metrics | ROI estimation; cost modeling; resource allocation; dependency mapping between initiatives | Section 7 (Roadmap Generation) |
+| 6 | **Executive dashboards** | ⚠️ Partial — Final report view with overview, deep dive, and roadmap tabs. Not a live/refreshable dashboard. | Persistent dashboard with live data; KPI tracking widgets; alerting; multi-org view for holding companies | Section 6 (Screen 3) |
+| 7 | **Progress tracking** | ⚠️ Minimal — Architecture supports versioned snapshots and delta detection; no historical comparison UI in hackathon build | Database-backed assessment history; trend charts; delta analysis between assessments; progress alerts; re-assessment triggers | Section 3 (Continuous Assessment Model) |
+| 8 | **Investment prioritization recommendations** | ✅ Full — Prioritization matrix (Impact × Urgency / Effort), quick-win identification, effort estimates contextualized to org size, success metrics per recommendation | Cost-benefit analysis; investment sizing; portfolio optimization | Section 7 (Roadmap Generation) |
 
-### Hackathon Minimum Viable Coverage
+### Hackathon Coverage Summary
 
-For the hackathon demo, we cover **5 of 8 vision items fully or substantially**:
-1. ✅ Digital maturity assessments — this is the core
+For the hackathon demo, we cover **6 of 8 vision items fully or substantially**, and all build challenge elements are designed for:
+
+1. ✅ Digital maturity assessments — core feature
 2. ✅ AI readiness evaluations — composite sub-score
-3. ✅ Transformation roadmaps — generated from assessment
-4. ⚠️ Industry benchmarking — AI-estimated (credible for demo)
-5. ⚠️ Executive dashboards — report view (sufficient for demo)
+3. ✅ Transformation roadmaps — personalized with prioritization
+4. ✅ Investment prioritization — impact/urgency/effort matrix
+5. ⚠️ Industry benchmarking — AI-estimated (credible for demo)
+6. ⚠️ Executive dashboards — report view (sufficient for demo)
 
-The remaining 3 (department-level, progress tracking, investment prioritization) are structurally designed for but require database persistence and multi-user flows that don't fit a 3-day hackathon. The framework config and architecture are designed to support these naturally as extensions.
+The remaining 2 (department-level, progress tracking) are architecturally supported but require database persistence and multi-user flows that don't fit a 3-day hackathon.
 
 ### Challenge Statement Resolution
 
@@ -540,9 +666,9 @@ The remaining 3 (department-level, progress tracking, investment prioritization)
 
 | Challenge Element | How Our Solution Addresses It |
 |---|---|
-| **Understand digital and AI maturity** | 7-dimension assessment with evidence-based scoring, grounded in 15+ established frameworks. Separate Digital Maturity Score and AI Readiness Score. |
-| **Benchmark progress** | AI-estimated industry benchmarks (hackathon); real benchmark dataset (post-hackathon). Framework versioning enables cross-time comparison once persistence is added. |
-| **Identify next highest-impact transformation opportunities** | Gap analysis (lowest-scoring dimensions × highest dependency impact) drives roadmap prioritization. AI generates specific, actionable recommendations ranked by impact. |
+| **Understand digital and AI maturity** | 7-dimension assessment with evidence-based scoring, grounded in 15+ established frameworks. Separate Digital Maturity Score and AI Readiness Score. Agentic assessment autonomously probes all dimensions to sufficient confidence. |
+| **Benchmark progress** | AI-estimated industry benchmarks via `estimate_benchmark` tool (hackathon); real benchmark dataset (post-hackathon). Continuous assessment model with versioned snapshots enables progress tracking over time. |
+| **Identify next highest-impact transformation opportunities** | Personalized roadmap with prioritization matrix (Impact × Urgency / Effort), dependency resolution, quick-win identification, and existing initiative awareness. The agent doesn't just find gaps — it ranks them by impact and sequences them by dependency. |
 
 ---
 

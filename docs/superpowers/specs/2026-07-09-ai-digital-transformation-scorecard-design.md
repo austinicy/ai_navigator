@@ -161,6 +161,8 @@ Both the web browser and the voice device are standalone conversation interfaces
 
 The device's MCP client calls assessment tools directly. Both interfaces contribute to the same organization's assessment via the shared backend.
 
+**Hackathon scope note:** For the hackathon, the deliverable is the MCP tool definitions and server implementation. The voice device's own STT/TTS pipeline and client-side integration is the device owner's responsibility.
+
 ### MCP Tools (for Voice Device)
 
 | Tool | Description |
@@ -211,7 +213,7 @@ The scorecard updates progressively — dimensions fill in as the AI gathers evi
 
 Tab-based layout: Overview, Deep Dive, Roadmap, Export.
 
-- **Overview**: Overall maturity score, industry average comparison, critical gaps highlighted
+- **Overview**: Overall maturity score, industry average comparison (AI-estimated from LLM knowledge, not real benchmark data — for hackathon scope), critical gaps highlighted
 - **Deep Dive**: Per-dimension breakdown with evidence, scores, and gap analysis
 - **Roadmap**: 3-phase transformation plan (0-3mo, 3-6mo, 6-12mo) with specific recommendations
 - **Export**: PDF download, share link

@@ -107,26 +107,26 @@ describe("calculateOverallScore", () => {
     expect(calculateOverallScore({}, config)).toBe(0);
   });
 
-  it("averages assessed dimensions but divides by ALL framework dimension weights", () => {
-    // Per the brief's formula, totalWeight is the sum of ALL framework dimension
-    // weights (7.0), not just the assessed ones. So a partially-assessed org
-    // gets a deflated overall score.
+  it("averages assessed dimensions, dividing by assessed-dimension weights only", () => {
+    // totalWeight is the sum of ASSESSED dimension weights only (not all 7),
+    // so a partially-assessed org gets a 1–5 overall score reflecting what's
+    // been assessed.
     // strategy score 4 (confidence 0.9), technology score 2 (confidence 0.8)
-    // weightedSum = 4*1 + 2*1 = 6; totalWeight = 7 → 6/7
+    // weightedSum = 4*1 + 2*1 = 6; totalWeight = 2 → 3
     const dims = {
       strategy: makeDim("strategy", { confidence: 0.9, score: 4 }),
       technology: makeDim("technology", { confidence: 0.8, score: 2 }),
       data_ai: makeDim("data_ai", { confidence: 0.1, score: 5 }), // below threshold
     };
-    expect(calculateOverallScore(dims, config)).toBeCloseTo(6 / 7, 10);
+    expect(calculateOverallScore(dims, config)).toBeCloseTo(3, 10);
   });
 
   it("includes a dimension exactly at the confidence threshold", () => {
-    // strategy score 4, totalWeight = 7 → 4/7
+    // strategy score 4, only assessed dim → totalWeight = 1 → 4/1 = 4
     const dims = {
       strategy: makeDim("strategy", { confidence: 0.7, score: 4 }),
     };
-    expect(calculateOverallScore(dims, config)).toBeCloseTo(4 / 7, 10);
+    expect(calculateOverallScore(dims, config)).toBeCloseTo(4, 10);
   });
 
   it("returns the plain average when all dimensions are assessed (uniform weights)", () => {
@@ -142,9 +142,9 @@ describe("calculateOverallScore", () => {
     const dims = {
       unknown_dim: makeDim("unknown_dim", { confidence: 0.9, score: 3 }),
     };
-    // totalWeight = sum of all framework dims (7), weightedSum = 3*1 (fallback)
-    // → 3 / 7
-    expect(calculateOverallScore(dims, config)).toBeCloseTo(3 / 7, 10);
+    // unknown dim not in framework → fallback weight 1; only assessed dim
+    // totalWeight = 1, weightedSum = 3*1 → 3 / 1 = 3
+    expect(calculateOverallScore(dims, config)).toBeCloseTo(3, 10);
   });
 });
 

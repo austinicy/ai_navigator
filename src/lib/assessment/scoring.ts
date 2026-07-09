@@ -32,12 +32,16 @@ export function calculateOverallScore(
   );
   if (assessedDims.length === 0) return 0;
 
-  const totalWeight = config.dimensions.reduce((sum, d) => sum + d.weight, 0);
+  // Divide by the sum of ASSESSED dimension weights only, so a partially
+  // assessed org gets a 1–5 overall score reflecting what's been assessed,
+  // not a deflated value from dividing by all framework dimensions.
+  let totalWeight = 0;
   const weightedSum = assessedDims.reduce((sum, dimAssessment) => {
     const dimConfig = config.dimensions.find(
       (d) => d.id === dimAssessment.dimensionId
     );
     const weight = dimConfig?.weight ?? 1;
+    totalWeight += weight;
     return sum + dimAssessment.score * weight;
   }, 0);
 

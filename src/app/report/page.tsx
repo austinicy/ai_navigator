@@ -14,15 +14,21 @@ export default function ReportPage() {
   const { delta: savedDelta, orgName: savedOrgName, industry: savedIndustry } = useAssessment();
   const [delta, setDelta] = useState<AssessmentDelta | null>(null);
 
-  // Prefer saved session state; fall back to demo data only if none exists
+  // Prefer saved session state; fall back to demo data only if none exists.
+  // Guard against a race: on mount savedDelta is null (the hook's localStorage
+  // read hasn't run yet), so a demo fetch fires. If saved state then loads
+  // before that fetch resolves, the stale demo response would overwrite the
+  // saved delta. The cancelled flag + savedDelta re-check drop stale results.
   useEffect(() => {
     if (savedDelta) {
       setDelta(savedDelta);
       return;
     }
+    let cancelled = false;
     fetch("/api/demo")
       .then((res) => res.json())
       .then((data) => {
+        if (cancelled || savedDelta) return;
         const demoDelta: AssessmentDelta = {
           dimensions: data.dimensions,
           aiReadiness: data.aiReadiness,
@@ -37,6 +43,9 @@ export default function ReportPage() {
         setDelta(demoDelta);
       })
       .catch(console.error);
+    return () => {
+      cancelled = true;
+    };
   }, [savedDelta]);
 
   const effectiveOrgName = savedOrgName || "Acme Corporation";

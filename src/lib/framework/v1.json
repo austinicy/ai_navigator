@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "name": "AI Transformation Navigator Maturity Framework",
-  "description": "A unified digital and AI maturity framework synthesizing 15+ established models, assessing organizations across 7 dimensions with 28 criteria and a cross-cutting AI Readiness sub-score.",
+  "description": "A unified digital and AI maturity framework synthesizing 15+ established models, assessing organizations across 7 dimensions with 30 criteria and a cross-cutting AI Readiness sub-score.",
   "dimensions": [
     {
       "id": "strategy",

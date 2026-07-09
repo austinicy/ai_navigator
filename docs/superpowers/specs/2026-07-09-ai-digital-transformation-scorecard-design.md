@@ -43,33 +43,112 @@ We chose **Approach 2: Adaptive Framework** — a structured maturity backbone c
 
 ## 4. Maturity Framework
 
-### Dimensions (6 Pillars)
+### Framework Provenance & References
 
-| # | Dimension | What It Measures |
-|---|-----------|-----------------|
-| 1 | **Strategy & Leadership** | Digital vision clarity, executive sponsorship, transformation governance, investment commitment |
-| 2 | **Technology Infrastructure** | Cloud maturity, tech debt, API-first architecture, infrastructure automation |
-| 3 | **Data & AI Capabilities** | Data quality/availability, ML/AI adoption, data governance, analytics maturity |
-| 4 | **Culture & Talent** | Digital literacy, change readiness, innovation culture, talent acquisition strategy |
-| 5 | **Operations & Processes** | Process digitization, automation level, agility of delivery, DevOps maturity |
-| 6 | **Customer Experience** | Digital channel maturity, personalization, journey orchestration, feedback loops |
+Our framework is not invented from scratch. It synthesizes the convergent dimensions identified across 15+ established digital transformation and AI maturity frameworks. The key references are:
+
+| Reference Framework | Source | Scope | Key Contribution to Our Model |
+|---|---|---|---|
+| **Digital Quotient** | McKinsey | Digital | Strategy + Customer Experience + Technology + Org/Culture as core pillars; percentile-based benchmarking model |
+| **Digital Maturity Model** | Deloitte | Digital | Strategy + CX + Operations + Culture structure; 4-level progression |
+| **Digital Business Transformation** | MIT CISR / Capgemini | Digital | Two-axis model (digital capability intensity × leadership intensity); emphasis on leadership as separate axis |
+| **Digital Business Maturity** | Gartner | Digital | 5-level model; Information/Technology as distinct from Operations |
+| **AI Maturity Model** | Gartner | AI | Strategy + ML Infrastructure + Business Impact + Decision Automation |
+| **MLOps Maturity Model** | Microsoft | AI/ML | **Fully public scoring rubric** (Levels 0-4); People + Model Creation + Release + App Integration |
+| **AI Maturity Framework** | Google Cloud | AI | Strategy + Data + Infra + Talent + Governance + Business Integration (6 dimensions) |
+| **AI/ML Maturity Model** | AWS | AI/ML | **Fully public scoring rubric** (4 levels); Business Goals + Data + ML Workload + Operations + People + Governance + Platform |
+| **AI Maturity Index** | Accenture | AI | Composite 0-100 score; Strategy + Data/Tech + Talent + Responsible AI + Value Realization |
+| **AI Maturity Model** | BCG | AI | Dabbling → Practicing → Scaling → AI-Native; Strategy + Data/Tech + Governance + Value Creation |
+| **AI Maturity Model** | IDC | AI | 5 levels; Strategy + Data + Tech/Platform + Talent + Use Cases/Outcomes |
+| **AI Maturity Model** | appliedAI Initiative | AI | 5 levels; Strategy + Data/Infra + Org/Culture + Use Case Portfolio + AI Engineering/MLOps |
+| **AI Maturity Model** | PwC | AI | Strategy + Data/Infra + Talent/Org + Responsible AI + Use Cases |
+| **Digital Maturity Benchmark** | Forrester | Digital | Strategy + CX + Operations + Technology/Ecosystem; benchmark dataset |
+| **Digital Maturity Assessment** | Adobe | Digital (CX) | Strategy + CX + Tech/Data + Org/Culture + Operations/Innovation |
+
+**Cross-framework convergence** (what almost every framework agrees on):
+1. **Strategy & Leadership** is always a primary dimension
+2. **Data/Technology** is always a primary dimension
+3. **People/Culture/Talent** is always a primary dimension
+4. **Operations/Processes** appears in most digital frameworks
+5. **Governance/Responsible AI** appears in most AI-specific frameworks
+6. **Customer Experience** appears in digital frameworks but not AI-specific ones
+7. **MLOps/AI Engineering** appears only in AI-specific frameworks as a distinct pillar
+
+**What our framework adds beyond existing models:**
+- **Unified digital + AI assessment** — most frameworks cover one or the other, not both
+- **Configurable, versioned structure** — existing frameworks are static; ours evolves
+- **AI-powered conversational assessment** — existing frameworks use surveys or consulting engagements
+- **Real-time scorecard building** — existing models produce post-hoc reports
+
+### Dimensions (7 Pillars)
+
+Based on the convergence analysis, we use 7 dimensions (not 6) to properly separate AI governance and give AI readiness first-class treatment:
+
+| # | Dimension | What It Measures | Primary Reference |
+|---|-----------|-----------------|-------------------|
+| 1 | **Strategy & Leadership** | Digital/AI vision clarity, executive sponsorship, transformation governance, investment commitment | McKinsey DQ, Deloitte, MIT/Capgemini |
+| 2 | **Technology Infrastructure** | Cloud maturity, tech debt, API-first architecture, infrastructure automation, platform engineering | Gartner, AWS, Microsoft |
+| 3 | **Data & AI Capabilities** | Data quality/availability, ML/AI adoption, data governance, analytics maturity, MLOps maturity | AWS, Microsoft MLOps, appliedAI |
+| 4 | **AI Governance & Ethics** | Responsible AI policies, risk management, compliance frameworks, model monitoring, bias detection | Accenture, PwC, Google, BCG |
+| 5 | **Culture & Talent** | Digital literacy, change readiness, innovation culture, AI talent acquisition, upskilling programs | McKinsey, Deloitte, IDC |
+| 6 | **Operations & Processes** | Process digitization, automation level, agility of delivery, DevOps maturity | Deloitte, Forrester, Adobe |
+| 7 | **Customer Experience** | Digital channel maturity, personalization, AI-powered CX, journey orchestration, feedback loops | McKinsey DQ, Adobe, Forrester |
+
+### AI Readiness Sub-Assessment
+
+AI readiness is not a single dimension — it's a cross-cutting capability that spans multiple dimensions. The AI Readiness Score is a **composite sub-score** derived from the AI-relevant criteria across all dimensions:
+
+| AI Readiness Component | Source Dimension | What It Evaluates |
+|---|---|---|
+| **AI Strategy** | Strategy & Leadership | Is there a defined AI strategy? Executive sponsorship? Investment allocated? |
+| **Data Readiness** | Data & AI Capabilities | Data quality, accessibility, governance, labeling infrastructure |
+| **Infrastructure Readiness** | Technology Infrastructure | Compute availability, ML platform, MLOps tooling, scalability |
+| **Talent Readiness** | Culture & Talent | ML engineers hired? Data scientists? Upskilling programs? |
+| **Governance Readiness** | AI Governance & Ethics | Responsible AI policies? Model monitoring? Compliance frameworks? |
+| **Operational Readiness** | Operations & Processes | Can the org deploy, monitor, and iterate on ML models in production? |
+
+The AI Readiness Score (0-100) is calculated as a weighted average of these components, using the scoring rubric from the AWS Well-Architected ML Lens (the most detailed publicly available AI maturity rubric) as the baseline reference.
+
+**Why this matters for the product vision:** "AI readiness evaluations" is a core product vision item. By making it a composite sub-score rather than a single dimension, we provide both the granular dimension scores AND a single headline number that executives can track.
 
 ### Maturity Levels (5 Levels per Dimension)
 
-| Level | Name | Description |
-|-------|------|-------------|
-| 1 | **Ad Hoc** | No formal capability. Reactive, inconsistent, personality-dependent |
-| 2 | **Emerging** | Initial efforts underway. Fragmented, not standardized |
-| 3 | **Defined** | Standardized processes exist. Measured but not optimized |
-| 4 | **Advanced** | Data-driven and automated. Proactive, optimized |
-| 5 | **Leading** | Industry-leading, innovative. Sets the benchmark for others |
+Our 5-level model aligns with CMMI-style progression used by Gartner, IDC, Microsoft, and appliedAI:
+
+| Level | Name | Description | Alignment |
+|-------|------|-------------|-----------|
+| 1 | **Ad Hoc** | No formal capability. Reactive, inconsistent, personality-dependent | CMMI Initial; Gartner Level 1; IDC AI Laggard |
+| 2 | **Emerging** | Initial efforts underway. Fragmented, not standardized | CMMI Repeatable; Gartner Level 2; IDC AI Explorer |
+| 3 | **Defined** | Standardized processes exist. Measured but not optimized | CMMI Defined; Gartner Level 3; IDC AI Practitioner |
+| 4 | **Advanced** | Data-driven and automated. Proactive, optimized | CMMI Managed; Gartner Level 4; IDC AI Innovator |
+| 5 | **Leading** | Industry-leading, innovative. Sets the benchmark for others | CMMI Optimizing; Gartner Level 5; IDC AI Leader |
+
+### Scoring Methodology
+
+**Dimension scores** are calculated per-criterion, then averaged:
+
+1. Each dimension has 3-5 assessment criteria (e.g., "Cloud Maturity", "Tech Debt Management" under Technology Infrastructure)
+2. Each criterion is scored 1-5 based on the level descriptors
+3. Dimension score = weighted average of criterion scores (criteria weights defined in framework config)
+4. Overall Digital Maturity Score = weighted average of all 7 dimension scores (dimension weights configurable, default: equal)
+5. AI Readiness Score = weighted average of AI-relevant criteria across dimensions
+
+**Scoring rubric design** draws from the two frameworks with fully public rubrics:
+- **Microsoft MLOps Maturity Model** — provides detailed level descriptors for ML-specific criteria
+- **AWS Well-Architected ML Lens** — provides detailed level descriptors for AI/ML infrastructure and operations
+
+For non-AI criteria (Strategy, CX, Culture), level descriptors are synthesized from the convergent patterns in McKinsey, Deloitte, and Gartner frameworks.
+
+**Evidence-based scoring**: Every score must be supported by at least 3 evidence items from conversation or documents. Scores without sufficient evidence are marked "Low Confidence" and flagged for follow-up.
 
 ### Framework Configuration
 
 The framework is defined as a JSON configuration containing:
 - Dimensions with assessment criteria and level descriptors
-- Scoring weights per dimension (default: equal weights)
+- Scoring weights per dimension and per criterion
+- AI readiness component mapping (which criteria feed into AI readiness)
 - Evidence thresholds (minimum signals per dimension for confidence)
+- Reference framework provenance (which established models each dimension aligns to)
 - Version identifier for tracking framework evolution
 
 **Example dimension config:**
@@ -79,16 +158,32 @@ The framework is defined as a JSON configuration containing:
   "id": "technology",
   "name": "Technology Infrastructure",
   "weight": 1.0,
+  "references": ["Gartner Digital Business Maturity", "AWS AI/ML Maturity Model", "Microsoft MLOps Maturity"],
   "criteria": [
     {
       "id": "cloud_maturity",
       "name": "Cloud Maturity",
+      "weight": 1.0,
+      "aiReadinessComponent": "infrastructure_readiness",
       "levels": {
         "1": "No cloud adoption; all on-premises infrastructure",
         "2": "Initial cloud experiments; <25% workloads migrated",
         "3": "Structured cloud migration; 25-60% workloads on cloud",
         "4": "Cloud-first strategy; 60-90% workloads on cloud, multi-cloud consideration",
         "5": "Cloud-native architecture; multi-cloud orchestration, infrastructure as code throughout"
+      }
+    },
+    {
+      "id": "ml_platform",
+      "name": "ML Platform & MLOps",
+      "weight": 1.0,
+      "aiReadinessComponent": "infrastructure_readiness",
+      "levels": {
+        "1": "No ML platform; manual model development and deployment",
+        "2": "Basic experiment tracking; manual deployment processes",
+        "3": "Standardized ML pipeline; automated training; manual monitoring",
+        "4": "MLOps platform with CI/CD for ML; automated retraining; model registry",
+        "5": "Fully automated ML lifecycle; A/B testing; model governance; self-healing pipelines"
       }
     }
   ]
@@ -101,7 +196,8 @@ The framework is defined as a JSON configuration containing:
 - New versions can add dimensions, refine level descriptors, or adjust weights
 - The AI loads the active framework version at assessment start
 - Historical assessments reference the framework version used, enabling cross-version comparison
-- Future: admin UI for framework management; community-contributed frameworks
+- Each version records which reference frameworks it was validated against
+- Future: admin UI for framework management; community-contributed frameworks; automatic alignment checks when reference frameworks publish updates
 
 ---
 
@@ -204,7 +300,7 @@ Key elements:
 
 Split-view layout:
 - **Left panel**: Conversational chat with AI consultant. Text input + optional voice (browser TTS/STT). Attach document button.
-- **Right panel**: Live scorecard building in real-time. Radar chart (6 axes) filling as conversation progresses. Dimension bars with scores. Evidence count. Overall score indicator.
+- **Right panel**: Live scorecard building in real-time. Radar chart (7 axes) filling as conversation progresses. Dimension bars with scores. AI Readiness sub-score. Evidence count. Overall score indicator.
 - **Bottom bar**: Signals collected count, documents loaded count.
 
 The scorecard updates progressively — dimensions fill in as the AI gathers evidence from conversation and documents. The visual "growth" of the scorecard IS the demo magic.
@@ -213,7 +309,7 @@ The scorecard updates progressively — dimensions fill in as the AI gathers evi
 
 Tab-based layout: Overview, Deep Dive, Roadmap, Export.
 
-- **Overview**: Overall maturity score, industry average comparison (AI-estimated from LLM knowledge, not real benchmark data — for hackathon scope), critical gaps highlighted
+- **Overview**: Overall Digital Maturity Score (7 dimensions), AI Readiness Score (composite), industry average comparison (AI-estimated from LLM knowledge, not real benchmark data — for hackathon scope), critical gaps highlighted
 - **Deep Dive**: Per-dimension breakdown with evidence, scores, and gap analysis
 - **Roadmap**: 3-phase transformation plan (0-3mo, 3-6mo, 6-12mo) with specific recommendations
 - **Export**: PDF download, share link
@@ -269,9 +365,20 @@ Every LLM response includes both a conversational message and a structured asses
         "gaps": ["Hybrid complexity management", "Legacy system modernization"]
       }
     },
+    "ai_readiness": {
+      "score": 28,
+      "components": {
+        "infrastructure_readiness": 0.6,
+        "data_readiness": null,
+        "talent_readiness": null,
+        "governance_readiness": null,
+        "ai_strategy": null,
+        "operational_readiness": null
+      }
+    },
     "signals_collected": 4,
     "dimensions_assessed": 2,
-    "dimensions_remaining": 4,
+    "dimensions_remaining": 5,
     "next_focus": "Data & AI capabilities"
   }
 }
@@ -280,7 +387,7 @@ Every LLM response includes both a conversational message and a structured asses
 ### Assessment Completion Detection
 
 The AI tracks:
-- Dimensions touched (target: all 6)
+- Dimensions touched (target: all 7)
 - Confidence level per dimension (target: ≥0.7)
 - Signals collected per dimension (target: ≥3 evidence items)
 
@@ -342,7 +449,7 @@ Separate LLM call once assessment is complete:
 
 - ✅ Landing page with start assessment CTA
 - ✅ Conversational assessment (chat UI + browser TTS)
-- ✅ Real-time scorecard (radar chart + dimension bars)
+- ✅ Real-time scorecard (radar chart + dimension bars + AI Readiness sub-score)
 - ✅ Document upload + AI extraction
 - ✅ Assessment completion → roadmap generation
 - ✅ Final report view with PDF export
@@ -399,12 +506,55 @@ Separate LLM call once assessment is complete:
 
 ---
 
-## 12. Reusability Notes
+## 12. Product Vision Coverage Analysis
+
+This section maps the 8 product vision items to the current design, identifying what's covered in the hackathon build vs. what requires post-hackathon development.
+
+### Vision Coverage Matrix
+
+| # | Vision Item | Hackathon Coverage | Post-Hackathon Coverage | Design Section |
+|---|-----------|-------------------|------------------------|----------------|
+| 1 | **Digital maturity assessments** | ✅ Full — 7 dimensions, 5 levels, evidence-based scoring, framework grounded in 15+ reference models | Continuous improvement of framework; community frameworks | Section 4 |
+| 2 | **AI readiness evaluations** | ✅ Full — AI Readiness composite sub-score across 6 components; grounded in AWS/Microsoft public rubrics | Industry-specific AI readiness benchmarks; comparison datasets | Section 4 (AI Readiness Sub-Assessment) |
+| 3 | **Department-level scorecards** | ⚠️ Partial — Framework supports department tagging; conversation can focus on a department; but no multi-user department input flow | Multi-user assessment: each department head does their own assessment; aggregated org view; department gap analysis | Section 9 (Deferred) |
+| 4 | **Industry benchmarking** | ⚠️ Partial — AI-estimated industry averages from LLM knowledge (not real benchmark data). Credible for demo but not for production. | Real benchmark dataset (partnership with research firm or crowd-sourced); percentile rankings; industry-specific profiles | Section 4 (Framework Provenance) + Section 9 (Deferred) |
+| 5 | **Transformation roadmaps** | ✅ Full — 3-phase roadmap with specific recommendations, effort indicators, prioritization logic based on gap analysis | ROI estimation; cost modeling; resource allocation; dependency mapping between initiatives | Section 7 (Roadmap Generation) |
+| 6 | **Executive dashboards** | ✅ Partial — Final report view with overview, deep dive, and roadmap tabs. Not a live/refreshable dashboard. | Persistent dashboard with live data; KPI tracking widgets; alerting; multi-org view for holding companies | Section 6 (Screen 3) |
+| 7 | **Progress tracking** | ⚠️ Minimal — Session stores current assessment; no historical comparison or trend tracking | Database-backed assessment history; trend charts; delta analysis between assessments; progress alerts | Section 9 (Deferred) |
+| 8 | **Investment prioritization recommendations** | ⚠️ Partial — Roadmap includes effort indicators (Low/Med/High) and gap-based prioritization. No cost-benefit analysis or ROI estimates. | Effort vs. Impact matrix; cost-benefit analysis; investment sizing; quick-win identification; portfolio optimization | Section 7 (Roadmap Generation) |
+
+### Hackathon Minimum Viable Coverage
+
+For the hackathon demo, we cover **5 of 8 vision items fully or substantially**:
+1. ✅ Digital maturity assessments — this is the core
+2. ✅ AI readiness evaluations — composite sub-score
+3. ✅ Transformation roadmaps — generated from assessment
+4. ⚠️ Industry benchmarking — AI-estimated (credible for demo)
+5. ⚠️ Executive dashboards — report view (sufficient for demo)
+
+The remaining 3 (department-level, progress tracking, investment prioritization) are structurally designed for but require database persistence and multi-user flows that don't fit a 3-day hackathon. The framework config and architecture are designed to support these naturally as extensions.
+
+### Challenge Statement Resolution
+
+> "How might we help organizations understand their digital and AI maturity, benchmark progress, and identify the next highest-impact transformation opportunities through AI?"
+
+| Challenge Element | How Our Solution Addresses It |
+|---|---|
+| **Understand digital and AI maturity** | 7-dimension assessment with evidence-based scoring, grounded in 15+ established frameworks. Separate Digital Maturity Score and AI Readiness Score. |
+| **Benchmark progress** | AI-estimated industry benchmarks (hackathon); real benchmark dataset (post-hackathon). Framework versioning enables cross-time comparison once persistence is added. |
+| **Identify next highest-impact transformation opportunities** | Gap analysis (lowest-scoring dimensions × highest dependency impact) drives roadmap prioritization. AI generates specific, actionable recommendations ranked by impact. |
+
+---
+
+## 13. Reusability Notes
 
 This design documents all key decisions for future reuse:
 
 - **Framework structure** (Section 4) is self-contained and can be adapted for any maturity assessment domain
+- **AI Readiness composite scoring** pattern is reusable for any cross-cutting sub-assessment (e.g., "Cloud Readiness", "Security Posture")
+- **Framework provenance tracking** — every dimension references which established models it aligns to, making the assessment defensible
 - **LLM chain pattern** (Section 7) with structured output + progressive scoring is reusable for any assessment/evaluation product
 - **Multi-interface architecture** (Section 5) with web + voice device via MCP is a reusable pattern for multi-modal AI products
 - **Demo data fallback** pattern ensures reliable hackathon demos
 - **Config-driven framework** approach means the same platform can serve different industries by swapping the config
+- **Product vision gap analysis** (Section 12) provides a roadmap from hackathon MVP to production product

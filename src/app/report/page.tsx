@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OverviewTab } from "@/components/report/OverviewTab";
 import { DeepDiveTab } from "@/components/report/DeepDiveTab";
 import { RoadmapTab } from "@/components/report/RoadmapTab";
+import { ExportTab } from "@/components/report/ExportTab";
 import { AssessmentDelta } from "@/lib/assessment/types";
 
 export default function ReportPage() {
@@ -76,9 +77,7 @@ export default function ReportPage() {
             />
           </TabsContent>
           <TabsContent value="export" className="mt-6">
-            <div className="text-center text-muted-foreground py-12">
-              PDF export will be added in Task 13
-            </div>
+            <ExportTab delta={delta} orgName="Acme Corporation" />
           </TabsContent>
         </Tabs>
       </main>

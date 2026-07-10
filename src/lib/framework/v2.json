@@ -1,0 +1,589 @@
+{
+  "version": "2.0",
+  "name": "AI Transformation Navigator Maturity Framework",
+  "description": "A unified digital and AI maturity framework synthesizing 15+ established models, assessing organizations across 7 dimensions with 30 criteria, a cross-cutting AI Readiness sub-score, industry benchmark targets, and a cross-dimension dependency map.",
+  "versionNotes": "v2.0 adds per-criterion benchmarkTarget (industry-typical level), dependsOn dependency edges, per-dimension weightingRationale, and weights on AI-readiness components. Level descriptors retained from v1.0 (grounded in the 15+ reference frameworks).",
+  "dimensions": [
+    {
+      "id": "strategy",
+      "name": "Strategy & Leadership",
+      "weight": 1.0,
+      "weightingRationale": "Equal weight (1.0): without strategy & sponsorship, no other dimension sustains progress; weighted equally rather than above others to avoid double-counting its influence on AI-readiness.",
+      "references": [
+        "McKinsey Digital Quotient",
+        "Deloitte Digital Maturity Model",
+        "MIT CISR Digital Business Transformation"
+      ],
+      "criteria": [
+        {
+          "id": "digital_vision",
+          "name": "Digital & AI Vision",
+          "weight": 1.0,
+          "aiReadinessComponent": "ai_strategy",
+          "benchmarkTarget": 3,
+          "levels": {
+            "1": "No documented digital or AI vision; direction is set ad hoc by individual leaders.",
+            "2": "A high-level digital vision exists but lacks AI specificity or measurable outcomes.",
+            "3": "A documented digital and AI vision with defined objectives is communicated across the organization.",
+            "4": "The vision is operationalized into a multi-year roadmap with measurable targets and ownership.",
+            "5": "The vision is continuously refined with market intelligence and cascades into every business unit's strategy."
+          }
+        },
+        {
+          "id": "executive_sponsorship",
+          "name": "Executive Sponsorship",
+          "weight": 1.0,
+          "aiReadinessComponent": "ai_strategy",
+          "benchmarkTarget": 3,
+          "levels": {
+            "1": "No executive owns digital or AI transformation; it is nobody's explicit mandate.",
+            "2": "A senior leader is informally accountable but lacks authority or dedicated time.",
+            "3": "A named C-level executive sponsors transformation with a chartered program and budget.",
+            "4": "The executive sponsor holds regular reviews, unblocks dependencies, and is measured on outcomes.",
+            "5": "The entire C-suite is accountable for transformation outcomes, embedded in performance and governance."
+          }
+        },
+        {
+          "id": "investment_commitment",
+          "name": "Investment Commitment",
+          "weight": 1.0,
+          "aiReadinessComponent": "ai_strategy",
+          "benchmarkTarget": 3,
+          "levels": {
+            "1": "No dedicated budget for digital or AI; spending is incidental and project-by-project.",
+            "2": "Opportunistic funding exists for pilots with no committed multi-year allocation.",
+            "3": "A ring-fenced annual budget funds a portfolio of digital and AI initiatives.",
+            "4": "Multi-year capital and operating budgets are committed and tied to value targets.",
+            "5": "Investment is treated as a portfolio with continuous reallocation toward highest-return AI bets."
+          }
+        },
+        {
+          "id": "governance_structure",
+          "name": "Transformation Governance",
+          "weight": 1.0,
+          "aiReadinessComponent": "ai_strategy",
+          "benchmarkTarget": 2,
+          "levels": {
+            "1": "No governance body oversees transformation; decisions are uncoordinated.",
+            "2": "An informal working group meets irregularly to coordinate initiatives.",
+            "3": "A formal steering committee with defined mandate prioritizes and reviews the portfolio.",
+            "4": "Governance integrates portfolio management, value tracking, and cross-functional prioritization.",
+            "5": "Governance is data-driven with real-time value tracking, stage-gates, and adaptive portfolio rebalancing."
+          }
+        }
+      ]
+    },
+    {
+      "id": "technology",
+      "name": "Technology Infrastructure",
+      "weight": 1.0,
+      "weightingRationale": "Equal weight (1.0): infrastructure is a precondition, not a value driver in itself; equal weight prevents over-rewarding tooling for its own sake.",
+      "references": [
+        "Gartner Digital Business Maturity",
+        "AWS Well-Architected ML Lens",
+        "Microsoft MLOps Maturity Model"
+      ],
+      "criteria": [
+        {
+          "id": "cloud_maturity",
+          "name": "Cloud Maturity",
+          "weight": 1.0,
+          "aiReadinessComponent": "infrastructure_readiness",
+          "benchmarkTarget": 3,
+          "levels": {
+            "1": "No cloud adoption; all workloads run on on-premises infrastructure.",
+            "2": "Initial cloud experiments are underway with under 25% of workloads migrated.",
+            "3": "Structured cloud migration has moved 25-60% of workloads with defined landing zones.",
+            "4": "A cloud-first strategy governs 60-90% of workloads with multi-zone resilience considered.",
+            "5": "Cloud-native architecture prevails with multi-cloud orchestration and infrastructure as code throughout."
+          }
+        },
+        {
+          "id": "tech_debt_management",
+          "name": "Technical Debt Management",
+          "weight": 1.0,
+          "aiReadinessComponent": "infrastructure_readiness",
+          "benchmarkTarget": 2,
+          "levels": {
+            "1": "Technical debt is untracked and accumulates without remediation.",
+            "2": "Debt is recognized informally but addressed only when it blocks delivery.",
+            "3": "Debt is inventoried and a portion of capacity is reserved for remediation each cycle.",
+            "4": "Debt is quantified, tracked in a backlog, and systematically retired against a target ratio.",
+            "5": "Debt is continuously measured with automated guardrails preventing regression in critical paths."
+          }
+        },
+        {
+          "id": "api_architecture",
+          "name": "API-First Architecture",
+          "weight": 1.0,
+          "aiReadinessComponent": "infrastructure_readiness",
+          "benchmarkTarget": 3,
+          "levels": {
+            "1": "Systems are tightly coupled with no standardized integration interfaces.",
+            "2": "Point-to-point integrations exist with no shared API standards or governance.",
+            "3": "An API gateway and design standards govern a growing portfolio of internal APIs.",
+            "4": "API-first design is mandated for new services with versioning, security, and discoverability.",
+            "5": "A managed API platform exposes capabilities internally and externally with full lifecycle governance."
+          }
+        },
+        {
+          "id": "infra_automation",
+          "name": "Infrastructure Automation",
+          "weight": 1.0,
+          "aiReadinessComponent": "infrastructure_readiness",
+          "benchmarkTarget": 3,
+          "levels": {
+            "1": "Infrastructure is provisioned and configured entirely by hand.",
+            "2": "Scripts automate isolated provisioning tasks without end-to-end consistency.",
+            "3": "Infrastructure as code defines environments with templated, repeatable builds.",
+            "4": "Pipelines provision and configure infrastructure automatically with policy guardrails.",
+            "5": "Infrastructure is fully declarative, self-healing, and version-controlled with drift detection."
+          }
+        },
+        {
+          "id": "platform_engineering",
+          "name": "Platform Engineering",
+          "weight": 1.0,
+          "aiReadinessComponent": "infrastructure_readiness",
+          "benchmarkTarget": 2,
+          "levels": {
+            "1": "Each team builds and operates its own infrastructure with no shared platform.",
+            "2": "Some shared tooling exists but adoption is voluntary and inconsistent.",
+            "3": "A centralized platform team provides standardized services with onboarding support.",
+            "4": "A self-service internal developer platform abstracts infrastructure with golden paths.",
+            "5": "The platform is product-managed, measured by developer productivity, and continuously evolved."
+          }
+        }
+      ]
+    },
+    {
+      "id": "data_ai",
+      "name": "Data & AI Capabilities",
+      "weight": 1.0,
+      "weightingRationale": "Equal weight (1.0): data & AI capability is where value compounds, but is gated by technology and governance; equal weight keeps the composite balanced.",
+      "references": [
+        "AWS Well-Architected ML Lens",
+        "Microsoft MLOps Maturity Model",
+        "Google Cloud AI Maturity Framework"
+      ],
+      "criteria": [
+        {
+          "id": "data_quality",
+          "name": "Data Quality & Accessibility",
+          "weight": 1.0,
+          "aiReadinessComponent": "data_readiness",
+          "benchmarkTarget": 2,
+          "dependsOn": ["technology.cloud_maturity"],
+          "levels": {
+            "1": "Data is siloed, undocumented, and of unknown quality across systems.",
+            "2": "Data quality issues are recognized but addressed reactively per project.",
+            "3": "Data quality dimensions are defined and measured for critical datasets with owners.",
+            "4": "Automated quality checks gate data pipelines with remediation workflows and SLAs.",
+            "5": "Continuous data observability proactively detects and resolves quality issues before impact."
+          }
+        },
+        {
+          "id": "data_governance",
+          "name": "Data Governance",
+          "weight": 1.0,
+          "aiReadinessComponent": "data_readiness",
+          "benchmarkTarget": 2,
+          "dependsOn": ["data_ai.data_quality"],
+          "levels": {
+            "1": "No data governance framework; ownership and access are undefined.",
+            "2": "Basic policies exist for sensitive data but are inconsistently enforced.",
+            "3": "A data governance council defines policies, stewards, and a catalog for critical assets.",
+            "4": "Governance is enforced through tooling with lineage, classification, and access controls automated.",
+            "5": "Governance is federated and adaptive with automated policy enforcement and full lineage at scale."
+          }
+        },
+        {
+          "id": "analytics_maturity",
+          "name": "Analytics Maturity",
+          "weight": 1.0,
+          "aiReadinessComponent": "data_readiness",
+          "benchmarkTarget": 3,
+          "dependsOn": ["data_ai.data_quality"],
+          "levels": {
+            "1": "Reporting is manual and descriptive with no common metrics definitions.",
+            "2": "Standard dashboards provide descriptive analytics for key business areas.",
+            "3": "Diagnostic and predictive analytics inform decisions with a central analytics function.",
+            "4": "Advanced analytics and statistical models are embedded in operational workflows.",
+            "5": "Analytics are real-time, self-service, and prescriptive with automated decisioning in production."
+          }
+        },
+        {
+          "id": "ml_ai_adoption",
+          "name": "ML & AI Adoption",
+          "weight": 1.0,
+          "aiReadinessComponent": "data_readiness",
+          "benchmarkTarget": 2,
+          "dependsOn": ["data_ai.data_governance", "data_ai.analytics_maturity"],
+          "levels": {
+            "1": "No ML or AI in use; the organization relies entirely on rules and manual processes.",
+            "2": "Isolated proof-of-concept models exist but none reach production.",
+            "3": "Several models are in production for well-scoped use cases with measurable value.",
+            "4": "AI is deployed across multiple functions with a portfolio managed against business outcomes.",
+            "5": "AI is integral to products and operations with continuous expansion of high-impact use cases."
+          }
+        },
+        {
+          "id": "mlops_maturity",
+          "name": "MLOps Maturity",
+          "weight": 1.0,
+          "aiReadinessComponent": "operational_readiness",
+          "benchmarkTarget": 2,
+          "dependsOn": ["data_ai.ml_ai_adoption", "operations.devops_maturity"],
+          "levels": {
+            "1": "No ML platform; model development and deployment are entirely manual.",
+            "2": "Basic experiment tracking exists with manual deployment and no monitoring.",
+            "3": "A standardized ML pipeline automates training with manual monitoring and release.",
+            "4": "An MLOps platform provides CI/CD for ML, automated retraining, and a model registry.",
+            "5": "The ML lifecycle is fully automated with A/B testing, governance, and self-healing pipelines."
+          }
+        }
+      ]
+    },
+    {
+      "id": "ai_governance",
+      "name": "AI Governance & Ethics",
+      "weight": 1.0,
+      "weightingRationale": "Equal weight (1.0): governance is a risk control, not a maturity driver; equal weight reflects its role as an enabler of safe scaling.",
+      "references": [
+        "Accenture AI Maturity Index",
+        "PwC AI Maturity Model",
+        "Google Cloud AI Maturity Framework",
+        "BCG AI Maturity Model"
+      ],
+      "criteria": [
+        {
+          "id": "responsible_ai_policy",
+          "name": "Responsible AI Policy",
+          "weight": 1.0,
+          "aiReadinessComponent": "governance_readiness",
+          "benchmarkTarget": 2,
+          "levels": {
+            "1": "No responsible AI principles or policies are defined or communicated.",
+            "2": "High-level AI ethics principles are published without operational guidance.",
+            "3": "A responsible AI policy defines standards for fairness, transparency, and accountability with owners.",
+            "4": "Policies are operationalized into review checklists required for all AI use cases at launch.",
+            "5": "Policies are continuously updated with regulatory and research input and enforced through automated controls."
+          }
+        },
+        {
+          "id": "risk_management",
+          "name": "AI Risk Management",
+          "weight": 1.0,
+          "aiReadinessComponent": "governance_readiness",
+          "benchmarkTarget": 2,
+          "dependsOn": ["ai_governance.responsible_ai_policy"],
+          "levels": {
+            "1": "AI-specific risks are not identified or tracked.",
+            "2": "Risks are identified ad hoc during incident response without a register.",
+            "3": "A risk register catalogs AI risks with owners and mitigation plans for key systems.",
+            "4": "Risks are assessed quantitatively and integrated into enterprise risk management with controls.",
+            "5": "Continuous risk monitoring with automated control testing feeds an adaptive risk posture across the portfolio."
+          }
+        },
+        {
+          "id": "compliance_framework",
+          "name": "Compliance Framework",
+          "weight": 1.0,
+          "aiReadinessComponent": "governance_readiness",
+          "benchmarkTarget": 2,
+          "levels": {
+            "1": "No framework maps AI systems to regulatory and legal requirements.",
+            "2": "General compliance processes apply but lack AI-specific considerations.",
+            "3": "An AI compliance framework maps obligations to systems with documented controls.",
+            "4": "Compliance controls are automated and evidenced for audits across jurisdictions.",
+            "5": "Continuous compliance monitoring with real-time regulatory updates keeps all AI systems audit-ready."
+          }
+        },
+        {
+          "id": "model_monitoring",
+          "name": "Model Monitoring & Bias Detection",
+          "weight": 1.0,
+          "aiReadinessComponent": "governance_readiness",
+          "benchmarkTarget": 1,
+          "dependsOn": ["data_ai.mlops_maturity"],
+          "levels": {
+            "1": "Deployed models are not monitored for performance, drift, or bias.",
+            "2": "Manual checks review model performance occasionally with no bias testing.",
+            "3": "Production models are monitored for drift and performance with periodic bias audits.",
+            "4": "Automated monitoring detects drift and bias with alerting and documented remediation.",
+            "5": "Continuous, automated monitoring of performance, drift, and bias triggers retraining and rollback autonomously."
+          }
+        }
+      ]
+    },
+    {
+      "id": "culture",
+      "name": "Culture & Talent",
+      "weight": 1.0,
+      "weightingRationale": "Equal weight (1.0): talent & culture determine whether transformation sticks; equal weight avoids penalizing orgs that are early on culture.",
+      "references": [
+        "McKinsey Digital Quotient",
+        "Deloitte Digital Maturity Model",
+        "IDC AI Maturity Model"
+      ],
+      "criteria": [
+        {
+          "id": "digital_literacy",
+          "name": "Digital & AI Literacy",
+          "weight": 1.0,
+          "aiReadinessComponent": "talent_readiness",
+          "benchmarkTarget": 2,
+          "levels": {
+            "1": "Workforce digital and AI literacy is not assessed or developed.",
+            "2": "Optional training is available but uptake is low and unmeasured.",
+            "3": "A baseline literacy program is rolled out with role-based learning paths and tracking.",
+            "4": "Literacy is measured by role with targeted upskilling closing identified gaps.",
+            "5": "Continuous, data-driven learning keeps the workforce current with evolving AI capabilities."
+          }
+        },
+        {
+          "id": "change_readiness",
+          "name": "Change Readiness",
+          "weight": 1.0,
+          "aiReadinessComponent": "talent_readiness",
+          "benchmarkTarget": 2,
+          "levels": {
+            "1": "The organization resists change with no formal change management capability.",
+            "2": "Change is managed reactively on major projects without sustained capability.",
+            "3": "A change management practice supports initiatives with communication and adoption tracking.",
+            "4": "Change readiness is embedded in how work is planned with proactive stakeholder engagement.",
+            "5": "The organization adapts continuously, treating change as a core competency measured and rewarded."
+          }
+        },
+        {
+          "id": "innovation_culture",
+          "name": "Innovation Culture",
+          "weight": 1.0,
+          "aiReadinessComponent": "talent_readiness",
+          "benchmarkTarget": 2,
+          "levels": {
+            "1": "Experimentation is discouraged and failure is penalized.",
+            "2": "Limited experimentation occurs but without structure, funding, or protection.",
+            "3": "A defined innovation process funds and shelters experiments with staged gating.",
+            "4": "Cross-functional teams routinely experiment with fast feedback and tolerance for measured failure.",
+            "5": "Innovation is systemic with continuous experimentation, shared learning, and rapid scaling of wins."
+          }
+        },
+        {
+          "id": "ai_talent_strategy",
+          "name": "AI Talent Strategy",
+          "weight": 1.0,
+          "aiReadinessComponent": "talent_readiness",
+          "benchmarkTarget": 2,
+          "levels": {
+            "1": "No strategy exists for acquiring or developing AI and data talent.",
+            "2": "Hiring is reactive to open requisitions with no pipeline or upskilling plan.",
+            "3": "A talent plan identifies needed AI roles with sourcing and upskilling programs underway.",
+            "4": "Targeted acquisition, retention, and internal mobility build a strong AI talent bench.",
+            "5": "The organization is a talent magnet with career paths, partnerships, and a thriving AI community."
+          }
+        }
+      ]
+    },
+    {
+      "id": "operations",
+      "name": "Operations & Processes",
+      "weight": 1.0,
+      "weightingRationale": "Equal weight (1.0): operational maturity is the delivery engine; equal weight keeps it from dominating the score.",
+      "references": [
+        "Deloitte Digital Maturity Model",
+        "Forrester Digital Maturity Benchmark",
+        "Adobe Digital Maturity Assessment"
+      ],
+      "criteria": [
+        {
+          "id": "process_digitization",
+          "name": "Process Digitization",
+          "weight": 1.0,
+          "aiReadinessComponent": "operational_readiness",
+          "benchmarkTarget": 3,
+          "levels": {
+            "1": "Core processes are paper-based or rely on fragmented manual tools.",
+            "2": "Some processes are digitized but with gaps and inconsistent adoption.",
+            "3": "Core end-to-end processes are digitized with defined owners and workflows.",
+            "4": "Processes are digitized, instrumented, and continuously optimized using performance data.",
+            "5": "Processes are dynamically reconfigured by data and AI to adapt in real time."
+          }
+        },
+        {
+          "id": "automation_level",
+          "name": "Automation Level",
+          "weight": 1.0,
+          "aiReadinessComponent": "operational_readiness",
+          "benchmarkTarget": 2,
+          "dependsOn": ["operations.process_digitization"],
+          "levels": {
+            "1": "Tasks are performed manually with no automation.",
+            "2": "Scripts automate isolated repetitive tasks without orchestration.",
+            "3": "Robotic or workflow automation handles selected end-to-end processes.",
+            "4": "Automation spans processes with orchestrated bots and integration across systems.",
+            "5": "Intelligent automation combines RPA, AI, and orchestration to self-optimize operations continuously."
+          }
+        },
+        {
+          "id": "delivery_agility",
+          "name": "Delivery Agility",
+          "weight": 1.0,
+          "aiReadinessComponent": "operational_readiness",
+          "benchmarkTarget": 3,
+          "levels": {
+            "1": "Delivery follows a rigid waterfall model with long release cycles.",
+            "2": "Some teams use iterative methods but cadence and alignment are inconsistent.",
+            "3": "Teams operate in consistent agile cadences with backlogs and regular demos.",
+            "4": "Agile delivery is scaled across the organization with aligned planning and dependencies managed.",
+            "5": "Delivery is flow-based with continuous prioritization, short lead times, and adaptive planning."
+          }
+        },
+        {
+          "id": "devops_maturity",
+          "name": "DevOps Maturity",
+          "weight": 1.0,
+          "aiReadinessComponent": "operational_readiness",
+          "benchmarkTarget": 3,
+          "levels": {
+            "1": "Development and operations are siloed with manual, infrequent releases.",
+            "2": "Basic CI is in place but releases remain manual and infrequent.",
+            "3": "CI/CD pipelines automate build, test, and deploy with staging environments.",
+            "4": "DevOps practices include automated testing, infrastructure as code, and monitoring across teams.",
+            "5": "Full DevSecOps with continuous deployment, automated rollbacks, and metrics-driven reliability is the norm."
+          }
+        }
+      ]
+    },
+    {
+      "id": "customer",
+      "name": "Customer Experience",
+      "weight": 1.0,
+      "weightingRationale": "Equal weight (1.0): CX is an outcome of the other dimensions; equal weight prevents outcome-inflation of the composite.",
+      "references": [
+        "McKinsey Digital Quotient",
+        "Adobe Digital Maturity Assessment",
+        "Forrester Digital Maturity Benchmark"
+      ],
+      "criteria": [
+        {
+          "id": "digital_channels",
+          "name": "Digital Channel Maturity",
+          "weight": 1.0,
+          "aiReadinessComponent": "operational_readiness",
+          "benchmarkTarget": 3,
+          "levels": {
+            "1": "Customer interactions are predominantly offline with minimal digital presence.",
+            "2": "Basic digital channels exist but are fragmented and inconsistently maintained.",
+            "3": "Integrated digital channels provide consistent service across web, mobile, and contact points.",
+            "4": "Digital channels are optimized with analytics driving continuous experience improvements.",
+            "5": "Omnichannel experiences are seamless, AI-assisted, and adapt to context in real time."
+          }
+        },
+        {
+          "id": "personalization",
+          "name": "Personalization",
+          "weight": 1.0,
+          "aiReadinessComponent": "data_readiness",
+          "benchmarkTarget": 2,
+          "dependsOn": ["data_ai.analytics_maturity"],
+          "levels": {
+            "1": "No personalization; all customers receive identical experiences.",
+            "2": "Basic segmentation drives a few static variations in messaging.",
+            "3": "Behavioral data powers rule-based personalization across key channels.",
+            "4": "Machine learning models personalize content, offers, and journeys in near real time.",
+            "5": "Individualized experiences are generated dynamically with continuous learning across every touchpoint."
+          }
+        },
+        {
+          "id": "journey_orchestration",
+          "name": "Journey Orchestration",
+          "weight": 1.0,
+          "aiReadinessComponent": "operational_readiness",
+          "benchmarkTarget": 2,
+          "dependsOn": ["customer.digital_channels"],
+          "levels": {
+            "1": "Customer journeys are not mapped or managed.",
+            "2": "Journeys are mapped but executed manually without coordination.",
+            "3": "Key journeys are orchestrated across channels with defined triggers and handoffs.",
+            "4": "Journeys are dynamically orchestrated using real-time signals and cross-channel logic.",
+            "5": "Journeys are AI-orchestrated end-to-end, self-optimizing against customer and business outcomes."
+          }
+        },
+        {
+          "id": "feedback_loops",
+          "name": "Feedback Loops",
+          "weight": 1.0,
+          "aiReadinessComponent": "data_readiness",
+          "benchmarkTarget": 2,
+          "levels": {
+            "1": "Customer feedback is not systematically collected or acted upon.",
+            "2": "Periodic surveys are collected with limited follow-through on insights.",
+            "3": "Feedback is collected continuously and routed to accountable owners for action.",
+            "4": "Feedback loops close automatically with insights feeding product and service improvements.",
+            "5": "Real-time, multi-signal feedback drives continuous, AI-prioritized improvement across the organization."
+          }
+        }
+      ]
+    }
+  ],
+  "aiReadinessComponents": [
+    {
+      "id": "ai_strategy",
+      "name": "AI Strategy",
+      "sourceDimension": "strategy",
+      "weight": 1.5,
+      "description": "Defined AI strategy, executive sponsorship, and allocated investment driving AI initiatives."
+    },
+    {
+      "id": "data_readiness",
+      "name": "Data Readiness",
+      "sourceDimension": "data_ai",
+      "weight": 1.5,
+      "description": "Data quality, accessibility, governance, and labeling infrastructure sufficient to support AI workloads."
+    },
+    {
+      "id": "infrastructure_readiness",
+      "name": "Infrastructure Readiness",
+      "sourceDimension": "technology",
+      "weight": 1.0,
+      "description": "Compute availability, ML platform, MLOps tooling, and scalability of the underlying infrastructure."
+    },
+    {
+      "id": "talent_readiness",
+      "name": "Talent Readiness",
+      "sourceDimension": "culture",
+      "weight": 1.0,
+      "description": "Availability of ML engineers and data scientists, plus upskilling programs that build AI fluency."
+    },
+    {
+      "id": "governance_readiness",
+      "name": "Governance Readiness",
+      "sourceDimension": "ai_governance",
+      "weight": 1.0,
+      "description": "Responsible AI policies, model monitoring, and compliance frameworks governing AI systems."
+    },
+    {
+      "id": "operational_readiness",
+      "name": "Operational Readiness",
+      "sourceDimension": "operations",
+      "weight": 1.0,
+      "description": "Ability to deploy, monitor, and iterate on ML models in production reliably and at scale."
+    }
+  ],
+  "evidenceThreshold": 3,
+  "confidenceThreshold": 0.7,
+  "referenceFrameworks": {
+    "AWS Well-Architected ML Lens": "https://docs.aws.amazon.com/wellarchitected/latest/machine-learning-lens/",
+    "Microsoft MLOps Maturity Model": "https://learn.microsoft.com/en-us/azure/architecture/example-scenario/mlops/mlops-technical",
+    "McKinsey Digital Quotient": "https://www.mckinsey.com/capabilities/mckinsey-digital/our-insights",
+    "Gartner Digital Business Maturity": "https://www.gartner.com/en/information-technology/glossary/digital-maturity",
+    "Google Cloud AI Maturity Framework": "https://cloud.google.com/transform/ai-maturity",
+    "Deloitte Digital Maturity Model": "https://www2.deloitte.com/us/en/insights/topics/digital-transformation.html",
+    "MIT CISR Digital Business Transformation": "https://cisr.mit.edu/",
+    "Accenture AI Maturity Index": "https://www.accenture.com/us-en/insights/artificial-intelligence/ai-maturity",
+    "BCG AI Maturity Model": "https://www.bcg.com/capabilities/artificial-intelligence/ai-maturity",
+    "IDC AI Maturity Model": "https://www.idc.com/",
+    "Forrester Digital Maturity Benchmark": "https://www.forrester.com/what-it-means"
+  }
+}

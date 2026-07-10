@@ -1,11 +1,14 @@
+// src/components/landing/CTAButton.tsx
 "use client";
 
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
 
 interface CTAButtonProps {
   href: string;
-  icon: React.ReactNode;
+  icon: LucideIcon;
   title: string;
   description: string;
   variant?: "primary" | "secondary";
@@ -13,28 +16,29 @@ interface CTAButtonProps {
 
 export function CTAButton({
   href,
-  icon,
+  icon: Icon,
   title,
   description,
   variant = "primary",
 }: CTAButtonProps) {
   return (
-    <Link href={href} className="block">
-      <div
-        className={`group relative rounded-xl border p-6 transition-all duration-300 hover:scale-[1.02] ${
-          variant === "primary"
-            ? "border-violet-500/30 bg-violet-500/5 hover:border-violet-500/60 hover:bg-violet-500/10"
-            : "border-pink-500/30 bg-pink-500/5 hover:border-pink-500/60 hover:bg-pink-500/10"
-        }`}
-      >
-        {variant === "primary" && (
-          <div className="absolute inset-0 rounded-xl glow-sm opacity-0 group-hover:opacity-100 transition-opacity" />
-        )}
-        <div className="relative z-10">
-          <div className="mb-3 text-3xl">{icon}</div>
-          <h3 className="text-xl font-bold text-foreground mb-2">{title}</h3>
-          <p className="text-muted-foreground text-sm">{description}</p>
+    <Link
+      href={href}
+      className={`group flex items-start gap-4 rounded-xl border p-5 transition-all hover:scale-[1.01] ${
+        variant === "primary"
+          ? "border-primary/30 bg-primary/5 hover:border-primary/50"
+          : "border-border bg-card hover:border-primary/40"
+      }`}
+    >
+      <div className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${variant === "primary" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}>
+        <Icon className="size-5" />
+      </div>
+      <div className="flex-1">
+        <div className="flex items-center gap-1.5">
+          <h3 className="text-base font-semibold text-foreground">{title}</h3>
+          <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
         </div>
+        <p className="mt-1 text-sm text-muted-foreground">{description}</p>
       </div>
     </Link>
   );

@@ -1,12 +1,23 @@
+// src/app/page.tsx
+import { SiteShell } from "@/components/layout/SiteShell";
 import { HeroSection } from "@/components/landing/HeroSection";
+import { StatTiles } from "@/components/landing/StatTiles";
+import { HowItWorks } from "@/components/landing/HowItWorks";
+import { ScorecardPreview } from "@/components/landing/ScorecardPreview";
+import { CredibilitySection } from "@/components/landing/CredibilitySection";
+import { FinalCTA } from "@/components/landing/FinalCTA";
 
 export default function Home() {
   return (
-    <main className="relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-violet-900/20 via-background to-background" />
-      <div className="relative z-10">
-        <HeroSection />
+    <SiteShell footer={false}>
+      <HeroSection />
+      <div id="highlights" className="mx-auto w-full max-w-7xl px-4 md:px-6">
+        <StatTiles />
       </div>
-    </main>
+      <HowItWorks />
+      <ScorecardPreview />
+      <CredibilitySection />
+      <FinalCTA />
+    </SiteShell>
   );
 }

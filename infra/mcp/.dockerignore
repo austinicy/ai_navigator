@@ -1,0 +1,6 @@
+# infra/mcp/.dockerignore
+node_modules
+.next
+dist
+.git
+*.md

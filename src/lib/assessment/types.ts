@@ -30,6 +30,23 @@ export interface OrgProfile {
   };
 }
 
+/**
+ * Coerce a (possibly partial) OrgProfile from an untrusted source (e.g. an
+ * HTTP body) into a fully-populated one. Matches the defaults used by
+ * AssessmentEngine so both paths agree on shape.
+ */
+export function normalizeOrgProfile(input?: Partial<OrgProfile>): OrgProfile {
+  return {
+    name: input?.name ?? "",
+    industry: input?.industry ?? "",
+    size: input?.size ?? "mid-market",
+    geography: input?.geography ?? "",
+    regulatoryEnvironment: input?.regulatoryEnvironment ?? [],
+    existingInitiatives: input?.existingInitiatives ?? [],
+    constraints: input?.constraints ?? {},
+  };
+}
+
 export interface AIReadinessBreakdown {
   score: number; // 0-100
   components: Record<string, number | null>; // componentId → score (null if not yet assessed)

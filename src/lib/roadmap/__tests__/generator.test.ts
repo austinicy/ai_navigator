@@ -1,8 +1,19 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { AssessmentEngine } from "../../assessment/engine";
 import { loadFramework } from "../../framework/config";
-import { parseRoadmapJson } from "../generator";
+import { parseRoadmapJson, generateRoadmap } from "../generator";
+import { AssessmentSession } from "../../assessment/types";
 import { Roadmap } from "../types";
+
+// Mock the LLM client at module top level so the generateRoadmap tests can
+// exercise the real prompt-building path without the network. parseRoadmapJson
+// never calls complete(), so this mock is inert for the other tests.
+// vi.hoisted gives a stable reference shared between the (hoisted) vi.mock
+// factory and the test body.
+const { mockComplete } = vi.hoisted(() => ({
+  mockComplete: vi.fn(),
+}));
+vi.mock("../../llm/client", () => ({ complete: mockComplete }));
 
 // Build a session with some real dimension scores so overallScore is non-zero
 // and deterministic-ish. The engine seeds all 7 dimensions at score 0; we
@@ -154,5 +165,48 @@ Let me know if you need changes.`;
     expect(roadmap.phases).toHaveLength(1);
     expect(roadmap.quickWins).toEqual([]);
     expect(roadmap.criticalGaps).toEqual([]);
+  });
+});
+
+describe("generateRoadmap", () => {
+  it("does not throw when orgProfile omits existingInitiatives and constraints", async () => {
+    // Reproduces the original crash: the client (RoadmapTab) POSTs a minimal
+    // orgProfile with only name + industry. generateRoadmap used to throw
+    // `Cannot read properties of undefined (reading 'join')` on
+    // profile.existingInitiatives.join(...). The LLM client is mocked at the
+    // module top level so we exercise the real prompt-building path (where the
+    // crash lived) without the network.
+    mockComplete.mockResolvedValue(
+      JSON.stringify({ phases: [], quickWins: [], criticalGaps: [] })
+    );
+
+    const config = loadFramework();
+    // Hand-build a session whose orgProfile is missing the optional-at-runtime
+    // fields, exactly as RoadmapTab does before the route normalizes it.
+    const session = {
+      id: "report",
+      frameworkVersion: config.version,
+      orgProfile: { name: "Acme Corp", industry: "Manufacturing" },
+      dimensions: {},
+      aiReadiness: { score: 50, components: {} },
+      conversationHistory: [],
+      documents: [],
+      isComplete: true,
+      createdAt: 0,
+      updatedAt: 0,
+    } as unknown as AssessmentSession;
+
+    // Should resolve rather than throw.
+    const roadmap = await generateRoadmap(session, config);
+    expect(roadmap.phases).toEqual([]);
+
+    // The prompt was built from a profile with no initiatives / no constraints
+    // — confirm those fields rendered as the documented fallbacks, proving the
+    // guard ran and the crash is gone.
+    const prompt = mockComplete.mock.calls[0][0][0].content as string;
+    expect(prompt).toContain("Existing Initiatives: none mentioned");
+    expect(prompt).toContain("Budget=unknown");
+    expect(prompt).toContain("Timeline=unknown");
+    expect(prompt).toContain("Talent=unknown");
   });
 });

@@ -69,8 +69,8 @@ export async function generateRoadmap(
 - Name: ${profile.name}
 - Industry: ${profile.industry}
 - Size: ${profile.size}
-- Existing Initiatives: ${profile.existingInitiatives.join(", ") || "none mentioned"}
-- Constraints: Budget=${profile.constraints.budget ?? "unknown"}, Timeline=${profile.constraints.timeline ?? "unknown"}, Talent=${profile.constraints.talentAvailability ?? "unknown"}
+- Existing Initiatives: ${(profile.existingInitiatives ?? []).filter(Boolean).join(", ") || "none mentioned"}
+- Constraints: Budget=${profile.constraints?.budget ?? "unknown"}, Timeline=${profile.constraints?.timeline ?? "unknown"}, Talent=${profile.constraints?.talentAvailability ?? "unknown"}
 
 ## Current Maturity Scores
 ${scoresText}

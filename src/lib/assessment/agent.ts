@@ -3,7 +3,8 @@ import type { LLMMessage } from "../llm/types";
 import { agentTools } from "./tools";
 import { AssessmentEngine } from "./engine";
 import { loadFramework } from "../framework/config";
-import { AgentResponse } from "./types";
+import { AgentResponse, OrgProfile } from "./types";
+import { estimateIndustryBenchmark } from "./benchmarks";
 
 const SYSTEM_PROMPT = `You are an expert Digital Transformation Consultant conducting a maturity assessment. Your goal is to assess ALL 7 dimensions to sufficient confidence.
 
@@ -124,10 +125,12 @@ export async function runAgentTurn(
           break;
         }
         case "estimate_benchmark": {
-          output = {
-            note: "Benchmark estimation included in assessment context",
-            industry: input.industry,
-          };
+          const benchmark = estimateIndustryBenchmark(
+            (input.industry as string) || session.orgProfile.industry || "Manufacturing",
+            (session.orgProfile.size as OrgProfile["size"]) || "mid-market",
+            loadFramework()
+          );
+          output = { industry: input.industry, benchmark };
           break;
         }
         case "generate_roadmap": {

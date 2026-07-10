@@ -6,6 +6,8 @@ import { AssessmentEngine } from "../lib/assessment/engine";
 import { runAgentTurn } from "../lib/assessment/agent";
 import { generateRoadmap } from "../lib/roadmap/generator";
 import { loadFramework } from "../lib/framework/config";
+import type { OrgProfile } from "../lib/assessment/types";
+import { estimateIndustryBenchmark } from "../lib/assessment/benchmarks";
 import { parseDocument } from "../lib/document/parser";
 import { extractSignals } from "../lib/document/extractor";
 
@@ -172,8 +174,14 @@ server.tool(
   },
   async (params) => {
     const p = params as Record<string, unknown>;
+    const config = loadFramework();
+    const benchmark = estimateIndustryBenchmark(
+      (p.industry as string) || "Manufacturing",
+      ((engine?.getSession().orgProfile.size) as OrgProfile["size"]) || "mid-market",
+      config
+    );
     return {
-      content: [{ type: "text" as const, text: JSON.stringify({ industry: p.industry, estimatedAvg: 3.2, note: "AI-estimated from LLM knowledge" }) }],
+      content: [{ type: "text" as const, text: JSON.stringify({ industry: p.industry, benchmark }) }],
     };
   }
 );

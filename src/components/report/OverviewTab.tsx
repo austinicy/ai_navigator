@@ -1,6 +1,7 @@
 import { AssessmentDelta } from "@/lib/assessment/types";
 import { loadFramework } from "@/lib/framework/config";
 import { calculateOverallScore } from "@/lib/assessment/scoring";
+import { estimateIndustryBenchmark } from "@/lib/assessment/benchmarks";
 import { GradientCard } from "@/components/shared/GradientCard";
 import { ScoreBadge } from "@/components/shared/ScoreBadge";
 import { GapHighlight } from "./GapHighlight";
@@ -17,7 +18,12 @@ export function OverviewTab({ delta }: OverviewTabProps) {
     .sort(([_, a], [__, b]) => a.score - b.score)
     .slice(0, 3);
 
-  const industryBenchmark = 3.2; // AI-estimated placeholder
+  const benchmark = estimateIndustryBenchmark(
+    delta.orgProfile?.industry || "Manufacturing",
+    delta.orgProfile?.size || "mid-market",
+    config
+  );
+  const industryBenchmark = benchmark.overall;
 
   return (
     <div className="space-y-6">

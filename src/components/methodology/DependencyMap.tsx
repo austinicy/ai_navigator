@@ -21,13 +21,20 @@ export function DependencyMap() {
   const [active, setActive] = useState<string | null>(null);
 
   // Build edges from criterion dependsOn: "dim.crit" → "dim.crit"
+  // Skip self-loops (intra-dimension deps) and dedupe stacked edges so only
+  // unique cross-dimension dependencies are visualized.
   const edges = useMemo(() => {
     const list: { from: string; to: string }[] = [];
+    const seen = new Set<string>();
     for (const dim of config.dimensions) {
       for (const c of dim.criteria) {
         if (!c.dependsOn) continue;
         for (const dep of c.dependsOn) {
           const fromDim = dep.split(".")[0];
+          if (fromDim === dim.id) continue; // skip self-loops (intra-dimension)
+          const key = `${fromDim}:${dim.id}`;
+          if (seen.has(key)) continue; // skip duplicate edges
+          seen.add(key);
           list.push({ from: fromDim, to: dim.id });
         }
       }

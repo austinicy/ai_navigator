@@ -1,5 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { createServer } from "http";
 import { z } from "zod";
 import { mcpTools } from "./tools";
 import { AssessmentEngine } from "../lib/assessment/engine";
@@ -206,4 +208,46 @@ export async function startMcpServer() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("AI Transformation Navigator MCP server running on stdio");
+}
+
+// Streamable HTTP transport — lets the MCP server be hosted remotely over HTTPS
+// and called by external devices via POST /mcp.
+//
+// NOTE on the SDK API (@modelcontextprotocol/sdk@1.29.0):
+// Unlike the stdio transport, StreamableHTTPServerTransport.handleRequest takes
+// the raw Node.js IncomingMessage + ServerResponse and writes the HTTP response
+// itself (it delegates to @hono/node-server for the Node<->Web-Standard bridge,
+// including SSE streaming). It does NOT return a JSON-RPC response object.
+// So we pass req/res straight through rather than parsing the body ourselves.
+export async function startMcpHttpServer(port: number) {
+  // Stateless mode (sessionIdGenerator: undefined): no session IDs, no
+  // in-memory state — simplest shape for a single-device remote host. Each
+  // request is handled independently against the shared `server` instance.
+  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+  await server.connect(transport);
+
+  const httpServer = createServer(async (req, res) => {
+    // Single endpoint: POST /mcp carries JSON-RPC over HTTP.
+    if (req.method === "POST" && req.url?.startsWith("/mcp")) {
+      try {
+        // The transport owns the full request/response cycle (parsing the
+        // body, dispatching into the McpServer, writing status + body).
+        await transport.handleRequest(req, res);
+      } catch (err) {
+        // Only write a response if the transport hasn't already sent one.
+        if (!res.headersSent) {
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Internal server error" }));
+        }
+        console.error("MCP HTTP request error:", err);
+      }
+      return;
+    }
+    res.writeHead(404);
+    res.end("Not found");
+  });
+
+  httpServer.listen(port, () => {
+    console.error(`AI Transformation Navigator MCP server listening on HTTP :${port}/mcp`);
+  });
 }

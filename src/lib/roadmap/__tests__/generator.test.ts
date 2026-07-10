@@ -17,7 +17,9 @@ vi.mock("../../llm/client", () => ({ complete: mockComplete }));
 
 // Build a session with some real dimension scores so overallScore is non-zero
 // and deterministic-ish. The engine seeds all 7 dimensions at score 0; we
-// score a couple to verify the mean computation.
+// score strategy at 4 with enough evidence to clear the confidence threshold
+// so calculateOverallScore counts it as assessed (no deflation from the 6
+// unassessed dims).
 function makeSession() {
   const engine = new AssessmentEngine({
     name: "Acme Corp",
@@ -29,10 +31,19 @@ function makeSession() {
   const config = engine.getConfig();
   const strategy = config.dimensions.find((d) => d.id === "strategy")!;
 
-  // Add evidence + score the strategy dimension.
+  // Add enough evidence per criterion so strategy's dimension confidence
+  // clears config.confidenceThreshold (0.7). Two conversation items per
+  // criterion (strength 0.5 each) yields volumeFactor ≈ 0.33, giving
+  // confidence ≈ 0.73 > 0.7.
   for (const c of strategy.criteria) {
     engine.addEvidence({
       text: `evidence for ${c.id}`,
+      source: "conversation",
+      dimensionId: "strategy",
+      criterionId: c.id,
+    });
+    engine.addEvidence({
+      text: `more evidence for ${c.id}`,
       source: "conversation",
       dimensionId: "strategy",
       criterionId: c.id,
@@ -99,18 +110,16 @@ describe("parseRoadmapJson", () => {
     expect(typeof roadmap.generatedAt).toBe("number");
   });
 
-  it("computes overallScore as the mean of all dimension scores", () => {
+  it("computes overallScore from assessed dimensions only (no deflation)", () => {
     const { session, config } = makeSession();
     const text = JSON.stringify({ phases: [], quickWins: [], criticalGaps: [] });
 
     const roadmap = parseRoadmapJson(text, session, config);
 
-    const expected =
-      Object.values(session.dimensions).reduce((s, d) => s + d.score, 0) /
-      Object.keys(session.dimensions).length;
-    expect(roadmap.overallScore).toBeCloseTo(expected, 5);
-    // Strategy was scored at 4; the other 6 stay at 0 → mean = 4/7.
-    expect(roadmap.overallScore).toBeCloseTo(4 / 7, 5);
+    // Strategy (score 4) is the only dimension above the confidence threshold;
+    // the other 6 dims are unassessed (confidence 0) and must NOT deflate the
+    // overall. So overall = 4, not 4/7 ≈ 0.57.
+    expect(roadmap.overallScore).toBeCloseTo(4, 5);
   });
 
   it("extracts JSON even when wrapped in prose and code fences", () => {
@@ -140,13 +149,15 @@ Let me know if you need changes.`;
     expect(roadmap.overallScore).toBeGreaterThan(0);
   });
 
-  it("returns the fallback roadmap (overallScore 0) when JSON is malformed", () => {
+  it("returns the fallback roadmap (empty phases) when JSON is malformed", () => {
     const { session, config } = makeSession();
     const text = `{this is : not valid JSON ,,,,}`;
 
     const roadmap: Roadmap = parseRoadmapJson(text, session, config);
     expect(roadmap.orgName).toBe("Acme Corp");
-    expect(roadmap.overallScore).toBe(0);
+    // overallScore is still computed from the session via calculateOverallScore
+    // (not a hardcoded 0) — the catch branch surfaces the real score.
+    expect(roadmap.overallScore).toBeGreaterThan(0);
     expect(roadmap.phases).toEqual([]);
     expect(roadmap.quickWins).toEqual([]);
     expect(roadmap.criticalGaps).toEqual([]);
@@ -165,6 +176,52 @@ Let me know if you need changes.`;
     expect(roadmap.phases).toHaveLength(1);
     expect(roadmap.quickWins).toEqual([]);
     expect(roadmap.criticalGaps).toEqual([]);
+  });
+});
+
+describe("parseRoadmapJson overallScore (no deflation)", () => {
+  it("uses assessed-dimensions-only overall (no deflation from unassessed dims)", () => {
+    // Build a session with only strategy assessed at 4; others 0/unassessed.
+    // Strategy confidence (0.9) exceeds the threshold; all other dims have
+    // confidence 0, so calculateOverallScore divides by strategy's weight only
+    // → overall = 4 (not 4/7 ≈ 0.57).
+    const config = loadFramework("v2.0");
+    const session: AssessmentSession = {
+      id: "s1",
+      frameworkVersion: "2.0",
+      orgProfile: {
+        name: "Acme",
+        industry: "Retail",
+        size: "mid-market",
+        geography: "",
+        regulatoryEnvironment: [],
+        existingInitiatives: [],
+        constraints: {},
+      },
+      dimensions: Object.fromEntries(
+        config.dimensions.map((d) => [
+          d.id,
+          {
+            dimensionId: d.id,
+            score: d.id === "strategy" ? 4 : 0,
+            confidence: d.id === "strategy" ? 0.9 : 0,
+            evidence: [],
+            gaps: [],
+            criterionScores: {},
+            criterionConfidence: {},
+          },
+        ])
+      ) as AssessmentSession["dimensions"],
+      aiReadiness: { score: 0, components: {} },
+      conversationHistory: [],
+      documents: [],
+      isComplete: false,
+      createdAt: 1,
+      updatedAt: 1,
+    };
+    const roadmap = parseRoadmapJson("{}", session, config);
+    // Only strategy (4) assessed → overall = 4 (not 4/7 ≈ 0.57).
+    expect(roadmap.overallScore).toBeCloseTo(4, 10);
   });
 });
 

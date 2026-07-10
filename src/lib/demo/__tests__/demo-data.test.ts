@@ -7,11 +7,11 @@ import type {
 } from "../../assessment/types";
 
 // Load the real framework so we can cross-check every criterionId used in the
-// demo data against v1.json. A typo here would make the demo report render "—"
+// demo data against v2.json. A typo here would make the demo report render "—"
 // for that criterion, so this is a high-value guard.
 const config = loadFramework();
 
-// Build a lookup: dimensionId -> Set of valid criterionIds from v1.json
+// Build a lookup: dimensionId -> Set of valid criterionIds from v2.json
 const validCriteriaByDimension: Record<string, Set<string>> = {};
 for (const dim of config.dimensions) {
   validCriteriaByDimension[dim.id] = new Set(dim.criteria.map((c) => c.id));
@@ -25,7 +25,7 @@ describe("getDemoSession", () => {
 
   it("returns a Partial<AssessmentSession> with the demo session id", () => {
     expect(session.id).toBe("demo-acme-corp");
-    expect(session.frameworkVersion).toBe("v1.0");
+    expect(session.frameworkVersion).toBe("2.0");
   });
 
   it("marks the session as complete", () => {
@@ -113,7 +113,7 @@ describe("getDemoSession", () => {
     expect(components.governance_readiness).toBe(10);
   });
 
-  it("every criterionScore key in demo data exists in v1.json (no typos)", () => {
+  it("every criterionScore key in demo data exists in v2.json (no typos)", () => {
     const dims = session.dimensions as Record<string, DimensionAssessment>;
     for (const dimId of expectedDimensionIds) {
       const dim = dims[dimId];
@@ -121,13 +121,13 @@ describe("getDemoSession", () => {
       for (const criterionId of Object.keys(dim.criterionScores)) {
         expect(
           validSet.has(criterionId),
-          `criterionId "${criterionId}" in dimension "${dimId}" does not exist in v1.json`
+          `criterionId "${criterionId}" in dimension "${dimId}" does not exist in v2.json`
         ).toBe(true);
       }
     }
   });
 
-  it("every evidence criterionId in demo data exists in v1.json (no typos)", () => {
+  it("every evidence criterionId in demo data exists in v2.json (no typos)", () => {
     const dims = session.dimensions as Record<string, DimensionAssessment>;
     for (const dimId of expectedDimensionIds) {
       const dim = dims[dimId];
@@ -136,7 +136,7 @@ describe("getDemoSession", () => {
         if (ev.criterionId) {
           expect(
             validSet.has(ev.criterionId),
-            `evidence criterionId "${ev.criterionId}" in dimension "${dimId}" does not exist in v1.json`
+            `evidence criterionId "${ev.criterionId}" in dimension "${dimId}" does not exist in v2.json`
           ).toBe(true);
         }
       }

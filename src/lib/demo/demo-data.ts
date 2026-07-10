@@ -109,7 +109,7 @@ const demoAIReadiness: AIReadinessBreakdown = {
 export function getDemoSession(): Partial<AssessmentSession> {
   return {
     id: "demo-acme-corp",
-    frameworkVersion: "v1.0",
+    frameworkVersion: "2.0",
     orgProfile: {
       name: "Acme Corporation",
       industry: "Manufacturing",

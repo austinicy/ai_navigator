@@ -1,4 +1,5 @@
 import { complete } from "../llm/client";
+import { calculateOverallScore } from "../assessment/scoring";
 import { AssessmentSession } from "../assessment/types";
 import { FrameworkConfig } from "../framework/types";
 import { Roadmap, RoadmapPhase, RoadmapAction } from "./types";
@@ -6,7 +7,7 @@ import { Roadmap, RoadmapPhase, RoadmapAction } from "./types";
 export function parseRoadmapJson(
   text: string,
   session: AssessmentSession,
-  _config: FrameworkConfig
+  config: FrameworkConfig
 ): Roadmap {
   const profile = session.orgProfile;
 
@@ -17,9 +18,7 @@ export function parseRoadmapJson(
     return {
       orgName: profile.name,
       industry: profile.industry,
-      overallScore:
-        Object.values(session.dimensions).reduce((sum, d) => sum + d.score, 0) /
-        Object.keys(session.dimensions).length,
+      overallScore: calculateOverallScore(session.dimensions, config),
       aiReadinessScore: session.aiReadiness.score,
       phases: (parsed.phases as RoadmapPhase[]) ?? [],
       quickWins: (parsed.quickWins as RoadmapAction[]) ?? [],
@@ -30,7 +29,7 @@ export function parseRoadmapJson(
     return {
       orgName: profile.name,
       industry: profile.industry,
-      overallScore: 0,
+      overallScore: calculateOverallScore(session.dimensions, config),
       aiReadinessScore: session.aiReadiness.score,
       phases: [],
       quickWins: [],

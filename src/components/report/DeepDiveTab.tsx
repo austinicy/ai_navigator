@@ -1,3 +1,4 @@
+import { FileText, MessageSquare, AlertTriangle } from "lucide-react";
 import { AssessmentDelta } from "@/lib/assessment/types";
 import { loadFramework } from "@/lib/framework/config";
 import { getDimensionLevel } from "@/lib/assessment/scoring";
@@ -25,7 +26,7 @@ export function DeepDiveTab({ delta }: DeepDiveTabProps) {
                   Level {level.level}: {level.name}
                 </p>
               </div>
-              <div className="text-2xl font-bold gradient-text">{assessment.score.toFixed(1)}</div>
+              <div className="text-2xl font-bold text-primary">{assessment.score.toFixed(1)}</div>
             </div>
 
             <div className="h-2 bg-muted/50 rounded-full overflow-hidden mb-4">
@@ -41,7 +42,13 @@ export function DeepDiveTab({ delta }: DeepDiveTabProps) {
                 <ul className="space-y-1">
                   {assessment.evidence.slice(0, 5).map((e) => (
                     <li key={e.id} className="text-xs text-muted-foreground flex items-start gap-1.5">
-                      <span className="shrink-0">{e.source === "document" ? "📄" : "💬"}</span>
+                      <span className="shrink-0 mt-0.5">
+                        {e.source === "document" ? (
+                          <FileText className="size-3" />
+                        ) : (
+                          <MessageSquare className="size-3" />
+                        )}
+                      </span>
                       <span>{e.text}</span>
                     </li>
                   ))}
@@ -52,7 +59,7 @@ export function DeepDiveTab({ delta }: DeepDiveTabProps) {
                 <ul className="space-y-1">
                   {assessment.gaps.map((gap, i) => (
                     <li key={i} className="text-xs text-red-400/80 flex items-start gap-1.5">
-                      <span className="shrink-0">⚠️</span>
+                      <AlertTriangle className="size-3 shrink-0 mt-0.5" />
                       <span>{gap}</span>
                     </li>
                   ))}

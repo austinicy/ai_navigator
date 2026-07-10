@@ -1,3 +1,4 @@
+import { AlertCircle, BarChart3 } from "lucide-react";
 import { AssessmentDelta } from "@/lib/assessment/types";
 import { loadFramework } from "@/lib/framework/config";
 import { calculateOverallScore } from "@/lib/assessment/scoring";
@@ -42,7 +43,10 @@ export function OverviewTab({ delta }: OverviewTabProps) {
 
       {criticalGaps.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-foreground mb-3">🔴 Critical Gaps</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-1.5">
+            <AlertCircle className="size-4 text-red-400" />
+            Critical Gaps
+          </h3>
           <div className="space-y-2">
             {criticalGaps.map(([id, dim]) => {
               const dimConfig = config.dimensions.find((d) => d.id === id);
@@ -60,7 +64,10 @@ export function OverviewTab({ delta }: OverviewTabProps) {
       )}
 
       <div>
-        <h3 className="text-sm font-semibold text-foreground mb-3">📊 Dimension Summary</h3>
+        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-1.5">
+          <BarChart3 className="size-4 text-primary" />
+          Dimension Summary
+        </h3>
         <div className="grid grid-cols-2 gap-2">
           {config.dimensions.map((dim) => {
             const assessment = delta.dimensions[dim.id];

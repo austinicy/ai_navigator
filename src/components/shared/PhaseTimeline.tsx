@@ -13,12 +13,12 @@ export function PhaseTimeline({ phases, activePhase }: PhaseTimelineProps) {
           <div
             className={`flex-1 rounded-lg border p-3 transition-all ${
               i === activePhase
-                ? "border-violet-500/60 bg-violet-500/10"
+                ? "border-primary/60 bg-primary/10"
                 : "border-border bg-card"
             }`}
           >
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-violet-400">
+              <span className="text-xs font-bold text-primary">
                 {String(i + 1).padStart(2, "0")}
               </span>
               <span className="text-xs font-semibold text-foreground">{phase.name}</span>

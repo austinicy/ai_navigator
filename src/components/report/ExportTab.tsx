@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Download, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GradientCard } from "@/components/shared/GradientCard";
 import { AssessmentDelta } from "@/lib/assessment/types";
@@ -57,10 +58,10 @@ export function ExportTab({ delta, orgName }: ExportTabProps) {
   <title>Digital Transformation Report - ${escapeHtml(orgName)}</title>
   <style>
     body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0a0a0a; color: #fafafa; margin: 40px; }
-    h1 { background: linear-gradient(90deg, #6366f1, #8b5cf6, #d946ef); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 28px; }
+    h1 { color: #2563eb; font-size: 28px; }
     h2 { color: #a1a1aa; font-size: 16px; margin-top: 30px; }
-    .score { font-size: 48px; font-weight: bold; background: linear-gradient(90deg, #6366f1, #8b5cf6, #d946ef); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .ai-score { font-size: 36px; font-weight: bold; color: #8b5cf6; }
+    .score { font-size: 48px; font-weight: bold; color: #2563eb; }
+    .ai-score { font-size: 36px; font-weight: bold; color: #2563eb; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th { background: #1a1a1a; padding: 8px; border: 1px solid #333; text-align: left; font-size: 12px; color: #a1a1aa; }
     .meta { color: #71717a; font-size: 12px; margin-top: 20px; }
@@ -124,18 +125,25 @@ export function ExportTab({ delta, orgName }: ExportTabProps) {
           disabled={isGenerating}
           className="gradient-primary text-white px-8"
         >
-          {isGenerating ? "Generating..." : "📥 Download PDF Report"}
+          {isGenerating ? (
+            "Generating..."
+          ) : (
+            <span className="inline-flex items-center gap-2">
+              <Download className="size-4" />
+              Download PDF Report
+            </span>
+          )}
         </Button>
       </GradientCard>
 
       <div className="text-left space-y-3 mt-8">
         <h4 className="text-sm font-semibold text-foreground">Report includes:</h4>
         <ul className="text-xs text-muted-foreground space-y-1.5">
-          <li>✅ Overall Digital Maturity Score ({overallScore.toFixed(1)}/5.0)</li>
-          <li>✅ AI Readiness Score ({delta.aiReadiness.score}/100)</li>
-          <li>✅ 7-dimension breakdown with levels and gaps</li>
-          <li>✅ Evidence-based scoring with sources</li>
-          <li>✅ Framework provenance ({Object.keys(config.referenceFrameworks).length} reference models)</li>
+          <li className="flex items-start gap-1.5"><Check className="size-3 text-primary shrink-0 mt-0.5" /> Overall Digital Maturity Score ({overallScore.toFixed(1)}/5.0)</li>
+          <li className="flex items-start gap-1.5"><Check className="size-3 text-primary shrink-0 mt-0.5" /> AI Readiness Score ({delta.aiReadiness.score}/100)</li>
+          <li className="flex items-start gap-1.5"><Check className="size-3 text-primary shrink-0 mt-0.5" /> 7-dimension breakdown with levels and gaps</li>
+          <li className="flex items-start gap-1.5"><Check className="size-3 text-primary shrink-0 mt-0.5" /> Evidence-based scoring with sources</li>
+          <li className="flex items-start gap-1.5"><Check className="size-3 text-primary shrink-0 mt-0.5" /> Framework provenance ({Object.keys(config.referenceFrameworks).length} reference models)</li>
         </ul>
       </div>
     </div>

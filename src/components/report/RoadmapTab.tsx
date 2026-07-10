@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Zap, AlertCircle } from "lucide-react";
 import { AssessmentDelta } from "@/lib/assessment/types";
 import { Roadmap, RoadmapAction } from "@/lib/roadmap/types";
 import { PhaseTimeline } from "@/components/shared/PhaseTimeline";
@@ -26,7 +27,7 @@ const impactColors: Record<string, string> = {
 
 function ActionCard({ action }: { action: RoadmapAction }) {
   return (
-    <div className="border border-border rounded-lg p-4 hover:border-violet-500/30 transition-colors">
+    <div className="border border-border rounded-lg p-4 hover:border-primary/30 transition-colors">
       <div className="flex items-start justify-between mb-2">
         <h4 className="text-sm font-semibold text-foreground">{action.title}</h4>
         <div className="flex gap-1 shrink-0 ml-2">
@@ -91,9 +92,9 @@ export function RoadmapTab({ delta, orgName, industry }: RoadmapTabProps) {
     return (
       <div className="text-center py-12">
         <div className="flex justify-center gap-1 mb-4">
-          <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" />
-          <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce [animation-delay:0.1s]" />
-          <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce [animation-delay:0.2s]" />
+          <span className="w-2 h-2 bg-primary rounded-full animate-bounce" />
+          <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:0.1s]" />
+          <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:0.2s]" />
         </div>
         <p className="text-muted-foreground text-sm">Generating personalized roadmap...</p>
       </div>
@@ -120,7 +121,7 @@ export function RoadmapTab({ delta, orgName, industry }: RoadmapTabProps) {
             onClick={() => setActivePhase(i)}
             className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
               i === activePhase
-                ? "border-violet-500/60 bg-violet-500/10 text-violet-300"
+                ? "border-primary/60 bg-primary/10 text-primary"
                 : "border-border bg-card text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -146,7 +147,10 @@ export function RoadmapTab({ delta, orgName, industry }: RoadmapTabProps) {
       {/* Quick wins */}
       {roadmap.quickWins.length > 0 && (
         <GradientCard>
-          <h3 className="text-sm font-semibold text-foreground mb-3">⚡ Quick Wins</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-1.5">
+            <Zap className="size-4 text-accent" />
+            Quick Wins
+          </h3>
           <div className="grid md:grid-cols-2 gap-2">
             {roadmap.quickWins.map((qw) => (
               <div key={qw.id} className="border border-emerald-500/20 rounded-lg p-3 bg-emerald-500/5">
@@ -161,7 +165,10 @@ export function RoadmapTab({ delta, orgName, industry }: RoadmapTabProps) {
       {/* Critical gaps */}
       {roadmap.criticalGaps.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-foreground mb-2">🚨 Critical Gaps Addressed</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1.5">
+            <AlertCircle className="size-4 text-red-400" />
+            Critical Gaps Addressed
+          </h3>
           <ul className="space-y-1">
             {roadmap.criticalGaps.map((gap, i) => (
               <li key={i} className="text-xs text-red-400/80 flex items-start gap-1.5">

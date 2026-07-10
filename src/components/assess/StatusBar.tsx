@@ -1,3 +1,4 @@
+import { FileText } from "lucide-react";
 import { AssessmentDelta } from "@/lib/assessment/types";
 
 interface StatusBarProps {
@@ -14,7 +15,7 @@ export function StatusBar({ delta, documentCount }: StatusBarProps) {
     <div className="flex items-center justify-between px-4 py-2 border-t border-border text-xs text-muted-foreground">
       <div className="flex gap-4">
         <span>📡 {signals} signals</span>
-        <span>📄 {documentCount} docs</span>
+        <span><FileText className="size-3" /> {documentCount} docs</span>
       </div>
       <div className="flex gap-4">
         <span>✅ {assessed}/7 assessed</span>

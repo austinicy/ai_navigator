@@ -1,3 +1,4 @@
+import { FileText, MessageSquare } from "lucide-react";
 import { AssessmentDelta } from "@/lib/assessment/types";
 
 interface EvidenceListProps {
@@ -19,7 +20,11 @@ export function EvidenceList({ delta }: EvidenceListProps) {
         {recent.map((e) => (
           <div key={e.id} className="flex items-start gap-2">
             <span className="text-[10px] text-muted-foreground shrink-0">
-              {e.source === "document" ? "📄" : "💬"}
+              {e.source === "document" ? (
+                <FileText className="size-3" />
+              ) : (
+                <MessageSquare className="size-3" />
+              )}
             </span>
             <span className="text-[11px] text-muted-foreground line-clamp-1">
               {e.text}

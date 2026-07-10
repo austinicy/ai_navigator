@@ -74,6 +74,41 @@ export function useChat() {
     }
   }, []);
 
+  const startAssessment = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kickoff: true, sessionId: "current" }),
+      });
+      if (!response.ok) throw new Error("Kickoff failed");
+      const data: AgentResponse = await response.json();
+      const openingMessage: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        role: "assistant",
+        content: data.message,
+        timestamp: Date.now(),
+        assessment: data.assessment,
+      };
+      setMessages((prev) => [...prev, openingMessage]);
+      setCurrentDelta(data.assessment);
+      setIsComplete(data.isComplete);
+    } catch (error) {
+      console.error("Kickoff error:", error);
+      // Fallback greeting so the UI isn't empty if the API is unreachable.
+      const fallback: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        role: "assistant",
+        content: "Hello! I'm your AI Transformation Navigator. Let's start with Strategy & Leadership — who sponsors digital and AI transformation in your organization?",
+        timestamp: Date.now(),
+      };
+      setMessages((prev) => [...prev, fallback]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   return {
     messages,
     isLoading,
@@ -81,5 +116,6 @@ export function useChat() {
     isComplete,
     sendMessage,
     uploadDocument,
+    startAssessment,
   };
 }

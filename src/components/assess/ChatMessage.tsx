@@ -12,7 +12,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
       <div
         className={`max-w-[80%] rounded-xl px-4 py-3 ${
           isUser
-            ? "bg-violet-600/20 border border-violet-500/30 text-foreground"
+            ? "bg-primary/10 border border-primary/30 text-foreground"
             : "bg-muted/50 border border-border text-foreground"
         }`}
       >

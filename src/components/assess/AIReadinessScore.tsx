@@ -9,7 +9,7 @@ export function AIReadinessScore({ aiReadiness }: AIReadinessScoreProps) {
   const components = aiReadiness?.components ?? {};
 
   const labelColors: Record<string, string> = {
-    ai_strategy: "text-indigo-400",
+    ai_strategy: "text-primary",
     data_readiness: "text-cyan-400",
     infrastructure_readiness: "text-blue-400",
     talent_readiness: "text-amber-400",

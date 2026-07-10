@@ -83,9 +83,9 @@ export function VoiceOverlay({ onExit }: VoiceOverlayProps) {
           <div className="flex justify-start mb-4">
             <div className="bg-muted/50 border border-border rounded-xl px-4 py-3">
               <div className="flex gap-1">
-                <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" />
-                <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce [animation-delay:0.1s]" />
-                <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce [animation-delay:0.2s]" />
+                <span className="w-2 h-2 bg-primary rounded-full animate-bounce" />
+                <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:0.1s]" />
+                <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:0.2s]" />
               </div>
             </div>
           </div>

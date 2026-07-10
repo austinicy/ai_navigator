@@ -69,7 +69,7 @@ export function ChatPanel({ onAssessmentUpdate, onComplete }: ChatPanelProps) {
         {voiceSupported && (
           <button
             onClick={() => setVoiceMode(true)}
-            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-violet-400 transition-colors px-3 py-1 rounded border border-border"
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors px-3 py-1 rounded border border-border"
             title="Switch to voice mode"
           >
             <Mic className="size-4" /> Voice mode
@@ -84,9 +84,9 @@ export function ChatPanel({ onAssessmentUpdate, onComplete }: ChatPanelProps) {
           <div className="flex justify-start mb-4">
             <div className="bg-muted/50 border border-border rounded-xl px-4 py-3">
               <div className="flex gap-1">
-                <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" />
-                <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce [animation-delay:0.1s]" />
-                <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce [animation-delay:0.2s]" />
+                <span className="w-2 h-2 bg-primary rounded-full animate-bounce" />
+                <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:0.1s]" />
+                <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:0.2s]" />
               </div>
             </div>
           </div>

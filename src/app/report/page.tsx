@@ -57,9 +57,11 @@ export default function ReportPage() {
 
   if (!delta) {
     return (
-      <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center">
-        <p className="text-muted-foreground">Loading report...</p>
-      </div>
+      <SiteShell footer={false} maxWidth="max-w-6xl">
+        <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center">
+          <p className="text-muted-foreground">Loading report...</p>
+        </div>
+      </SiteShell>
     );
   }
 

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
+import { VoiceOverlay } from "./VoiceOverlay";
 import { useChat } from "@/hooks/useChat";
 import { useVoice } from "@/hooks/useVoice";
 
@@ -12,9 +13,18 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({ onAssessmentUpdate, onComplete }: ChatPanelProps) {
-  const { messages, isLoading, currentDelta, isComplete, sendMessage, uploadDocument } = useChat();
-  const { isListening, startListening, speak, isSupported: voiceSupported } = useVoice();
+  const { messages, isLoading, currentDelta, isComplete, sendMessage, uploadDocument, startAssessment } = useChat();
+  const { speak, isSupported: voiceSupported } = useVoice();
+  const [voiceMode, setVoiceMode] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const kickedOffRef = useRef(false);
+
+  // Agent-led kickoff: fire once on mount so the agent greets + asks first.
+  useEffect(() => {
+    if (kickedOffRef.current) return;
+    kickedOffRef.current = true;
+    startAssessment();
+  }, [startAssessment]);
 
   useEffect(() => {
     if (currentDelta) onAssessmentUpdate(currentDelta);
@@ -24,54 +34,48 @@ export function ChatPanel({ onAssessmentUpdate, onComplete }: ChatPanelProps) {
     if (isComplete) onComplete();
   }, [isComplete, onComplete]);
 
-  // Auto-speak assistant messages
+  // Auto-speak assistant messages in TEXT mode (voice mode handles its own TTS).
   useEffect(() => {
+    if (voiceMode) return;
     const lastMsg = messages[messages.length - 1];
-    if (lastMsg?.role === "assistant") {
-      speak(lastMsg.content);
-    }
-  }, [messages, speak]);
+    if (lastMsg?.role === "assistant") speak(lastMsg.content);
+  }, [messages, speak, voiceMode]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
-  const handleVoiceInput = async () => {
-    try {
-      const text = await startListening();
-      if (text) sendMessage(text);
-    } catch {
-      // Voice recognition failed silently
-    }
-  };
-
   const handleUpload = async (file: File) => {
     const result = await uploadDocument(file);
     if (result?.signalsCount > 0) {
-      sendMessage(
-        `I've uploaded "${file.name}". I found ${result.signalsCount} relevant signals. Please review and ask follow-up questions.`
-      );
+      sendMessage(`I've uploaded "${file.name}". I found ${result.signalsCount} relevant signals. Please review and ask follow-up questions.`);
     } else if (result) {
-      sendMessage(
-        `I've uploaded "${file.name}" but couldn't extract strong signals. Please ask me about what you found in it.`
-      );
+      sendMessage(`I've uploaded "${file.name}" but couldn't extract strong signals. Please ask me about what you found in it.`);
     }
   };
 
+  if (voiceMode) {
+    return <VoiceOverlay onExit={() => setVoiceMode(false)} />;
+  }
+
   return (
     <div className="flex flex-col h-full">
-      <div className="px-4 py-3 border-b border-border">
-        <h2 className="font-semibold text-foreground">Assessment Chat</h2>
-        <p className="text-xs text-muted-foreground">AI Consultant is ready</p>
+      <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+        <div>
+          <h2 className="font-semibold text-foreground">Assessment Chat</h2>
+          <p className="text-xs text-muted-foreground">AI Consultant is leading the assessment</p>
+        </div>
+        {voiceSupported && (
+          <button
+            onClick={() => setVoiceMode(true)}
+            className="text-xs text-muted-foreground hover:text-violet-400 transition-colors px-3 py-1 rounded border border-border"
+            title="Switch to voice mode"
+          >
+            🎤 Voice mode
+          </button>
+        )}
       </div>
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4">
-        {messages.length === 0 && (
-          <div className="text-center text-muted-foreground text-sm mt-8">
-            <p className="text-lg mb-2">👋 Welcome!</p>
-            <p>Tell me about your organization to begin the assessment.</p>
-            <p className="mt-2 text-xs">I&apos;ll assess 7 dimensions of digital & AI maturity.</p>
-          </div>
-        )}
         {messages.map((msg) => (
           <ChatMessage key={msg.id} message={msg} />
         ))}
@@ -90,9 +94,8 @@ export function ChatPanel({ onAssessmentUpdate, onComplete }: ChatPanelProps) {
       <ChatInput
         onSend={sendMessage}
         onUpload={handleUpload}
-        onVoiceInput={handleVoiceInput}
+        onVoiceInput={() => setVoiceMode(true)}
         isLoading={isLoading}
-        isListening={isListening}
       />
     </div>
   );

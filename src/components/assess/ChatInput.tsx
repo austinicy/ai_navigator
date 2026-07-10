@@ -9,7 +9,6 @@ interface ChatInputProps {
   onUpload: (file: File) => void;
   onVoiceInput: () => void;
   isLoading: boolean;
-  isListening: boolean;
 }
 
 export function ChatInput({
@@ -17,7 +16,6 @@ export function ChatInput({
   onUpload,
   onVoiceInput,
   isLoading,
-  isListening,
 }: ChatInputProps) {
   const [input, setInput] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -58,12 +56,12 @@ export function ChatInput({
           }}
         />
         <Button
-          variant={isListening ? "destructive" : "ghost"}
+          variant="ghost"
           size="icon"
           onClick={onVoiceInput}
-          title={isListening ? "Listening..." : "Voice input"}
+          title="Switch to voice mode (hides text input)"
         >
-          {isListening ? "🔴" : "🎤"}
+          🎤
         </Button>
         <Textarea
           value={input}

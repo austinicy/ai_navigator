@@ -36,12 +36,14 @@ export function HeroSection() {
         />
       </div>
 
-      <a
-        href="/assess?demo=true"
-        className="text-sm text-muted-foreground hover:text-violet-400 transition-colors underline underline-offset-4"
-      >
-        Load demo company →
-      </a>
+      <div className="flex gap-4 text-sm">
+        <a href="/assess?demo=true" className="text-muted-foreground hover:text-violet-400 transition-colors underline underline-offset-4">
+          Load demo company →
+        </a>
+        <a href="/methodology" className="text-muted-foreground hover:text-violet-400 transition-colors underline underline-offset-4">
+          How the assessment works →
+        </a>
+      </div>
     </div>
   );
 }

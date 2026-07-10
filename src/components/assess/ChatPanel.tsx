@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Mic } from "lucide-react";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
 import { VoiceOverlay } from "./VoiceOverlay";
@@ -68,10 +69,10 @@ export function ChatPanel({ onAssessmentUpdate, onComplete }: ChatPanelProps) {
         {voiceSupported && (
           <button
             onClick={() => setVoiceMode(true)}
-            className="text-xs text-muted-foreground hover:text-violet-400 transition-colors px-3 py-1 rounded border border-border"
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-violet-400 transition-colors px-3 py-1 rounded border border-border"
             title="Switch to voice mode"
           >
-            🎤 Voice mode
+            <Mic className="size-4" /> Voice mode
           </button>
         )}
       </div>

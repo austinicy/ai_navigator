@@ -6,6 +6,7 @@ import { OverviewTab } from "@/components/report/OverviewTab";
 import { DeepDiveTab } from "@/components/report/DeepDiveTab";
 import { RoadmapTab } from "@/components/report/RoadmapTab";
 import { ExportTab } from "@/components/report/ExportTab";
+import { SiteShell } from "@/components/layout/SiteShell";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { useAssessment } from "@/hooks/useAssessment";
 import { AssessmentDelta } from "@/lib/assessment/types";
@@ -56,7 +57,7 @@ export default function ReportPage() {
 
   if (!delta) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center">
         <p className="text-muted-foreground">Loading report...</p>
       </div>
     );
@@ -64,20 +65,12 @@ export default function ReportPage() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen">
-        <header className="border-b border-border px-6 py-4">
-          <div className="flex items-center justify-between max-w-6xl mx-auto">
-            <div>
-              <h1 className="text-lg font-bold gradient-text">Transformation Report</h1>
-              <p className="text-xs text-muted-foreground">AI Transformation Navigator</p>
-            </div>
-            <a href="/" className="text-xs text-muted-foreground hover:text-foreground">
-              ← New Assessment
-            </a>
+      <SiteShell maxWidth="max-w-6xl">
+        <div className="py-8">
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-foreground">Transformation report</h1>
+            <p className="text-sm text-muted-foreground">AI Transformation Navigator</p>
           </div>
-        </header>
-
-        <main className="max-w-6xl mx-auto px-6 py-8">
           <Tabs defaultValue="overview" className="w-full">
             <TabsList className="bg-muted/30">
               <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -102,8 +95,8 @@ export default function ReportPage() {
               <ExportTab delta={delta} orgName={effectiveOrgName} />
             </TabsContent>
           </Tabs>
-        </main>
-      </div>
+        </div>
+      </SiteShell>
     </ErrorBoundary>
   );
 }

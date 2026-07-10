@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { Paperclip, Mic, ArrowRight } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
@@ -43,7 +44,7 @@ export function ChatInput({
           onClick={() => fileInputRef.current?.click()}
           title="Attach document"
         >
-          📎
+          <Paperclip className="size-4" />
         </Button>
         <input
           ref={fileInputRef}
@@ -61,7 +62,7 @@ export function ChatInput({
           onClick={onVoiceInput}
           title="Switch to voice mode (hides text input)"
         >
-          🎤
+          <Mic className="size-4" />
         </Button>
         <Textarea
           value={input}
@@ -77,7 +78,7 @@ export function ChatInput({
           disabled={!input.trim() || isLoading}
           className="gradient-primary text-white"
         >
-          {isLoading ? "..." : "→"}
+          {isLoading ? "..." : <ArrowRight className="size-4" />}
         </Button>
       </div>
     </div>

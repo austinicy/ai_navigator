@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { Mic, Circle, Keyboard } from "lucide-react";
 import { ChatMessage } from "./ChatMessage";
 import { useChat } from "@/hooks/useChat";
 import { useContinuousVoice } from "@/hooks/useContinuousVoice";
@@ -68,9 +69,9 @@ export function VoiceOverlay({ onExit }: VoiceOverlayProps) {
         </div>
         <button
           onClick={onExit}
-          className="text-xs text-muted-foreground hover:text-foreground transition-colors px-3 py-1 rounded border border-border"
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-3 py-1 rounded border border-border"
         >
-          ⌨ Text input
+          <Keyboard className="size-3.5" /> Text input
         </button>
       </div>
 
@@ -101,14 +102,18 @@ export function VoiceOverlay({ onExit }: VoiceOverlayProps) {
       <div className="border-t border-border p-6 flex flex-col items-center gap-3">
         <button
           onClick={isListening ? stop : start}
-          className={`w-20 h-20 rounded-full flex items-center justify-center text-3xl transition-all ${
+          className={`w-20 h-20 rounded-full flex items-center justify-center transition-all ${
             isListening
               ? "bg-red-500/20 border-2 border-red-500 animate-pulse"
               : "gradient-primary text-white border-2 border-transparent"
           }`}
           title={isListening ? "Stop listening" : "Start listening"}
         >
-          {isListening ? "🔴" : "🎤"}
+          {isListening ? (
+            <Circle className="size-8 text-red-500" />
+          ) : (
+            <Mic className="size-8" />
+          )}
         </button>
         <p className="text-xs text-muted-foreground">
           {isListening ? "Listening — speak naturally" : "Mic off"}

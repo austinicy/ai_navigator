@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { ChatPanel } from "@/components/assess/ChatPanel";
 import { ScorecardPanel } from "@/components/assess/ScorecardPanel";
+import { SiteShell } from "@/components/layout/SiteShell";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { useAssessment } from "@/hooks/useAssessment";
 import { AssessmentDelta } from "@/lib/assessment/types";
@@ -57,39 +58,32 @@ function AssessPageContent() {
   }, []);
 
   return (
-    <div className="h-screen flex flex-col">
-      <header className="border-b border-border px-4 py-2 flex items-center justify-between shrink-0">
-        <h1 className="text-sm font-semibold gradient-text">AI Transformation Navigator</h1>
-        <div className="flex gap-2">
-          <a href="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-            ← Start Over
-          </a>
+    <SiteShell footer={false} maxWidth="max-w-none">
+      <div className="flex h-[calc(100vh-3.5rem)] flex-col">
+        <div className="flex-1 flex overflow-hidden">
+          <div className="w-1/2 border-r border-border">
+            <ChatPanel
+              onAssessmentUpdate={handleAssessmentUpdate}
+              onComplete={handleComplete}
+            />
+          </div>
+          <div className="w-1/2">
+            <ScorecardPanel delta={delta} documentCount={documentCount} />
+          </div>
         </div>
-      </header>
 
-      <div className="flex-1 flex overflow-hidden">
-        <div className="w-1/2 border-r border-border">
-          <ChatPanel
-            onAssessmentUpdate={handleAssessmentUpdate}
-            onComplete={handleComplete}
-          />
-        </div>
-        <div className="w-1/2">
-          <ScorecardPanel delta={delta} documentCount={documentCount} />
-        </div>
+        {isComplete && delta && (
+          <div className="border-t border-border px-4 py-3 flex justify-center shrink-0">
+            <a
+              href="/report"
+              className="gradient-primary text-white font-semibold px-8 py-2 rounded-lg hover:opacity-90 transition-opacity inline-block"
+            >
+              View Full Report & Roadmap →
+            </a>
+          </div>
+        )}
       </div>
-
-      {isComplete && delta && (
-        <div className="border-t border-border px-4 py-3 flex justify-center shrink-0">
-          <a
-            href="/report"
-            className="gradient-primary text-white font-semibold px-8 py-2 rounded-lg hover:opacity-90 transition-opacity inline-block"
-          >
-            View Full Report & Roadmap →
-          </a>
-        </div>
-      )}
-    </div>
+    </SiteShell>
   );
 }
 

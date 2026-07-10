@@ -23,8 +23,36 @@ describe("buildSystemPrompt", () => {
     const engine = new AssessmentEngine();
     const prompt = buildSystemPrompt(engine);
 
-    expect(prompt).toContain("Dimensions assessed so far: 0");
+    expect(prompt).toContain("Dimensions assessed: 0/7");
     expect(prompt).toContain("Dimensions remaining: 7");
+  });
+
+  it("includes the framework version and all 7 dimensions", () => {
+    const engine = new AssessmentEngine();
+    const prompt = buildSystemPrompt(engine);
+    expect(prompt).toContain("Framework v2.0");
+    expect(prompt).toContain("Strategy & Leadership");
+    expect(prompt).toContain("Customer Experience");
+  });
+
+  it("instructs the agent to lead the conversation and ask the first question", () => {
+    const engine = new AssessmentEngine();
+    const prompt = buildSystemPrompt(engine);
+    expect(prompt).toMatch(/lead the conversation/i);
+    expect(prompt).toMatch(/ask.*first.*question|first.*targeted.*question/i);
+  });
+
+  it("surfaces the org profile when known", () => {
+    const engine = new AssessmentEngine({ name: "Acme", industry: "Retail" });
+    const prompt = buildSystemPrompt(engine);
+    expect(prompt).toContain("Acme");
+    expect(prompt).toContain("Retail");
+  });
+
+  it("includes the dependency-map guidance", () => {
+    const engine = new AssessmentEngine();
+    const prompt = buildSystemPrompt(engine);
+    expect(prompt).toMatch(/dependenc/i);
   });
 
   it("points the next focus at the first dimension (strategy) for a fresh engine", () => {
@@ -108,7 +136,7 @@ describe("buildSystemPrompt", () => {
 
     const prompt = buildSystemPrompt(engine);
 
-    expect(prompt).toContain("Dimensions assessed so far: 1");
+    expect(prompt).toContain("Dimensions assessed: 1/7");
     expect(prompt).toContain("Dimensions remaining: 6");
     // Next unassessed dimension is the second one (technology).
     const nextId = config.dimensions[1].id;
@@ -119,11 +147,13 @@ describe("buildSystemPrompt", () => {
     const engine = new AssessmentEngine();
     const prompt = buildSystemPrompt(engine);
 
+    expect(prompt).not.toContain("{FRAMEWORK_VERSION}");
     expect(prompt).not.toContain("{FRAMEWORK_DIMENSIONS}");
     expect(prompt).not.toContain("{DIMENSIONS_ASSESSED}");
     expect(prompt).not.toContain("{DIMENSIONS_REMAINING}");
     expect(prompt).not.toContain("{NEXT_FOCUS}");
     expect(prompt).not.toContain("{ORG_PROFILE}");
     expect(prompt).not.toContain("{CURRENT_SCORES}");
+    expect(prompt).not.toContain("{INDUSTRY_BENCHMARK}");
   });
 });

@@ -6,19 +6,21 @@ import { loadFramework } from "../framework/config";
 import { AgentResponse, OrgProfile } from "./types";
 import { estimateIndustryBenchmark } from "./benchmarks";
 
-const SYSTEM_PROMPT = `You are an expert Digital Transformation Consultant conducting a maturity assessment. Your goal is to assess ALL 7 dimensions to sufficient confidence.
+const SYSTEM_PROMPT = `You are an expert Digital Transformation Consultant conducting a maturity assessment using Framework v{FRAMEWORK_VERSION}. You assess ALL 7 dimensions to sufficient confidence.
 
-## Assessment Dimensions
+## Assessment Dimensions & Criteria
 {FRAMEWORK_DIMENSIONS}
 
-## Your Behavior
-1. GOAL-DIRECTED: You drive the assessment forward. After gathering evidence on one dimension, transition to the next unassessed dimension.
-2. CONVERSATIONAL: Ask natural follow-up questions. Connect insights across dimensions.
-3. EVIDENCE-BASED: Every score must be supported by evidence from the conversation.
-4. TOOL-USING: Use calculate_score when you have ≥3 evidence items for a dimension. Use update_org_profile when you learn org context. Use estimate_benchmark when you know the industry. Use generate_roadmap ONLY when all 7 dimensions are assessed.
+## Your Behavior — You LEAD the conversation
+1. LEAD: You drive the assessment. You ask the questions. The user is NOT required to speak first — you open with a warm greeting and your first targeted question about Strategy & Leadership, then guide them dimension by dimension.
+2. GOAL-DIRECTED: After gathering evidence on one dimension (≥3 evidence items, confidence rising), transition to the next unassessed dimension. Never re-ask what you already know.
+3. CONVERSATIONAL: Ask one focused question at a time. Connect insights across dimensions ("You mentioned 60% cloud migration — that shapes your Data & AI readiness. How are data pipelines modernizing alongside it?").
+4. EVIDENCE-BASED: Every score must be traceable to evidence from the conversation or uploaded documents.
+5. DEPENDENCY-AWARE: Respect dependencies — don't probe advanced AI use cases until the data foundation is understood. Sequence your questioning data→AI→MLOps→governance where relevant.
+6. TOOL-USING: Use calculate_score when you have ≥3 evidence items for a dimension. Use update_org_profile when you learn industry/size/geography/constraints. Use estimate_benchmark when you know the industry. Use generate_roadmap ONLY when all 7 dimensions are assessed with sufficient confidence.
 
 ## Assessment Progress
-- Dimensions assessed so far: {DIMENSIONS_ASSESSED}
+- Dimensions assessed: {DIMENSIONS_ASSESSED}/7
 - Dimensions remaining: {DIMENSIONS_REMAINING}
 - Next focus: {NEXT_FOCUS}
 
@@ -28,14 +30,11 @@ const SYSTEM_PROMPT = `You are an expert Digital Transformation Consultant condu
 ## Current Scores
 {CURRENT_SCORES}
 
-## Response Format
-Respond naturally in conversation. After each exchange, consider whether you should:
-1. Ask another follow-up question
-2. Calculate a score for a dimension you now have sufficient evidence for
-3. Move to the next unassessed dimension
-4. Signal the assessment is complete and generate a roadmap
+## Industry Benchmark (estimated)
+{INDUSTRY_BENCHMARK}
 
-When all dimensions are assessed with sufficient confidence, call generate_roadmap.`;
+## Response Format
+Respond naturally and concisely in conversation (2–4 sentences). After each exchange, decide whether to: (a) ask a follow-up, (b) calculate a score, (c) move to the next dimension, or (d) signal completion + generate_roadmap. When all dimensions are assessed, call generate_roadmap.`;
 
 export function buildSystemPrompt(engine: AssessmentEngine): string {
   const config = loadFramework();
@@ -51,16 +50,22 @@ export function buildSystemPrompt(engine: AssessmentEngine): string {
     .join("\n");
 
   const orgProfile = session.orgProfile.name
-    ? `Name: ${session.orgProfile.name}\nIndustry: ${session.orgProfile.industry}\nSize: ${session.orgProfile.size}`
-    : "Not yet gathered — ask about the organization first";
+    ? `Name: ${session.orgProfile.name}\nIndustry: ${session.orgProfile.industry}\nSize: ${session.orgProfile.size}\nGeography: ${session.orgProfile.geography || "unknown"}`
+    : "Not yet gathered — ask about the organization early, but lead with your first question regardless.";
+
+  const benchmarkText = session.orgProfile.industry
+    ? `Industry: ${session.orgProfile.industry} (size: ${session.orgProfile.size})`
+    : "Unknown industry — ask, then estimate.";
 
   return SYSTEM_PROMPT
+    .replace("{FRAMEWORK_VERSION}", config.version)
     .replace("{FRAMEWORK_DIMENSIONS}", dimensionsText)
     .replace("{DIMENSIONS_ASSESSED}", String(delta.dimensionsAssessed))
     .replace("{DIMENSIONS_REMAINING}", String(delta.dimensionsRemaining))
     .replace("{NEXT_FOCUS}", delta.nextFocus || "Start with Strategy & Leadership")
     .replace("{ORG_PROFILE}", orgProfile)
-    .replace("{CURRENT_SCORES}", currentScores);
+    .replace("{CURRENT_SCORES}", currentScores)
+    .replace("{INDUSTRY_BENCHMARK}", benchmarkText);
 }
 
 export async function runAgentTurn(

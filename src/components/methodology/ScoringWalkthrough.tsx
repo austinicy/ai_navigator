@@ -11,7 +11,7 @@ const STEPS = [
   { icon: Gauge, title: "Digital Maturity Score", body: "Weighted average of dimensions assessed to ≥70% confidence, divided by assessed-dimension weights only." },
   { icon: Sparkles, title: "AI Readiness Score (0–100)", body: "Composite of 6 cross-cutting components. Strategy and Data weighted 1.5× as leading indicators. Normalized 1–5 → 0–100." },
   { icon: TrendingUp, title: "Benchmark delta", body: "Every criterion has an industry-typical target. The report shows where you lead or lag peers, adjusted for org size and regulation." },
-  { icon: GitBranch, title: "Dependency map", body: "12 cross-dimension edges sequence the roadmap so you never scale AI before the foundations are solid." },
+  { icon: GitBranch, title: "Dependency map", body: "Cross-dimension dependency edges sequence the roadmap so you never scale AI before the foundations are solid." },
 ];
 
 export function ScoringWalkthrough() {

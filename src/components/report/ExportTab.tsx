@@ -12,6 +12,15 @@ interface ExportTabProps {
   orgName: string;
 }
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export function ExportTab({ delta, orgName }: ExportTabProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const config = loadFramework();
@@ -36,7 +45,7 @@ export function ExportTab({ delta, orgName }: ExportTabProps) {
               <td style="padding:8px;border:1px solid #333;font-weight:600">${dim.name}</td>
               <td style="padding:8px;border:1px solid #333;text-align:center">${score.toFixed(1)} / 5.0</td>
               <td style="padding:8px;border:1px solid #333;text-align:center">Level ${level.level}: ${level.name}</td>
-              <td style="padding:8px;border:1px solid #333;font-size:12px">${gaps}</td>
+              <td style="padding:8px;border:1px solid #333;font-size:12px">${escapeHtml(gaps)}</td>
             </tr>`;
         })
         .join("");
@@ -45,7 +54,7 @@ export function ExportTab({ delta, orgName }: ExportTabProps) {
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Digital Transformation Report - ${orgName}</title>
+  <title>Digital Transformation Report - ${escapeHtml(orgName)}</title>
   <style>
     body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0a0a0a; color: #fafafa; margin: 40px; }
     h1 { background: linear-gradient(90deg, #6366f1, #8b5cf6, #d946ef); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 28px; }
@@ -88,8 +97,8 @@ export function ExportTab({ delta, orgName }: ExportTabProps) {
   </table>
 
   <p class="meta">
-    Organization: ${orgName} | Generated: ${new Date().toLocaleDateString()} |
-    Framework: AI Transformation Navigator v1.0 |
+    Organization: ${escapeHtml(orgName)} | Generated: ${new Date().toLocaleDateString()} |
+    Framework: AI Transformation Navigator v${delta.frameworkVersion} |
     Grounded in: McKinsey DQ, Deloitte, MIT/Capgemini, Gartner, Microsoft MLOps, AWS ML Lens, Accenture, BCG, IDC, appliedAI, PwC, Google, Forrester, Adobe
   </p>
 </body>
@@ -126,7 +135,7 @@ export function ExportTab({ delta, orgName }: ExportTabProps) {
           <li>✅ AI Readiness Score ({delta.aiReadiness.score}/100)</li>
           <li>✅ 7-dimension breakdown with levels and gaps</li>
           <li>✅ Evidence-based scoring with sources</li>
-          <li>✅ Framework provenance (15+ reference models)</li>
+          <li>✅ Framework provenance ({Object.keys(config.referenceFrameworks).length} reference models)</li>
         </ul>
       </div>
     </div>

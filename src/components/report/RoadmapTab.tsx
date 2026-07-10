@@ -61,7 +61,7 @@ export function RoadmapTab({ delta, orgName, industry }: RoadmapTabProps) {
       orgProfile: { name: orgName, industry },
       isComplete: true,
       id: "report",
-      frameworkVersion: "v1.0",
+      frameworkVersion: delta.frameworkVersion,
       conversationHistory: [],
       documents: [],
       createdAt: Date.now(),

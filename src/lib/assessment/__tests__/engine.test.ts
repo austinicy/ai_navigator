@@ -14,6 +14,7 @@ function evidenceInput(
     text: "some evidence",
     source: "conversation",
     dimensionId,
+    strength: 0.5,
     ...overrides,
   };
 }
@@ -125,6 +126,11 @@ describe("AssessmentEngine.updateDimensionScore", () => {
   it("recomputes the dimension score as a weighted average of criterion scores", () => {
     const engine = new AssessmentEngine();
     // strategy: 4 criteria, all weight 1. Score all at 4 → 4.0
+    // Add evidence per criterion so criterionConfidence > 0 (score is confidence-weighted).
+    engine.addEvidence(evidenceInput("strategy", { criterionId: "digital_vision", strength: 1.0 }));
+    engine.addEvidence(evidenceInput("strategy", { criterionId: "executive_sponsorship", strength: 1.0 }));
+    engine.addEvidence(evidenceInput("strategy", { criterionId: "investment_commitment", strength: 1.0 }));
+    engine.addEvidence(evidenceInput("strategy", { criterionId: "governance_structure", strength: 1.0 }));
     engine.updateDimensionScore("strategy", {
       digital_vision: 4,
       executive_sponsorship: 4,
@@ -136,20 +142,20 @@ describe("AssessmentEngine.updateDimensionScore", () => {
     expect(dim.score).toBe(4.0);
   });
 
-  it("recomputes confidence from evidence count and criteria coverage", () => {
+  it("recomputes confidence with the new 0.6/0.4 coverage+volume model", () => {
     const engine = new AssessmentEngine();
-    // Add 3 evidence items (meets evidenceThreshold=3 → evidenceFactor=1)
+    // 3 evidence on strategy, strength 0.5 → 1.5 strength-units
     engine.addEvidence(evidenceInput("strategy"));
     engine.addEvidence(evidenceInput("strategy"));
     engine.addEvidence(evidenceInput("strategy"));
-    // Score 2 of 4 criteria → criteriaFactor = 2/4 = 0.5
-    // confidence = (1 + 0.5) / 2 = 0.75
+    // 2 of 4 criteria scored → coverage 0.5
     engine.updateDimensionScore("strategy", {
       digital_vision: 3,
       executive_sponsorship: 3,
     }, []);
     const dim = engine.getSession().dimensions.strategy;
-    expect(dim.confidence).toBeCloseTo(0.75, 10);
+    // coverage 0.5 × 0.6 = 0.3; volume = 1.5 / (4×3=12) = 0.125 × 0.4 = 0.05 → 0.35
+    expect(dim.confidence).toBeCloseTo(0.35, 1);
   });
 
   it("merges new criterion scores with existing ones (does not overwrite unscored)", () => {
@@ -180,6 +186,13 @@ describe("AssessmentEngine.updateDimensionScore", () => {
     // Before: aiReadiness score 0, components empty
     expect(engine.getSession().aiReadiness.score).toBe(0);
     expect(Object.keys(engine.getSession().aiReadiness.components).length).toBe(0);
+
+    // Add evidence per criterion so criterionConfidence > 0 (required for the
+    // confidence-weighted scoring to produce a non-zero component).
+    engine.addEvidence(evidenceInput("strategy", { criterionId: "digital_vision", strength: 1.0 }));
+    engine.addEvidence(evidenceInput("strategy", { criterionId: "executive_sponsorship", strength: 1.0 }));
+    engine.addEvidence(evidenceInput("strategy", { criterionId: "investment_commitment", strength: 1.0 }));
+    engine.addEvidence(evidenceInput("strategy", { criterionId: "governance_structure", strength: 1.0 }));
 
     // Score all ai_strategy criteria at 5 → component 100
     engine.updateDimensionScore("strategy", {
@@ -297,13 +310,17 @@ describe("AssessmentEngine.getDelta", () => {
 
   it("counts only dimensions meeting the confidence threshold as assessed", () => {
     const engine = new AssessmentEngine();
-    // Make strategy reach confidence 0.75: 3 evidence + 2 criteria scored
-    engine.addEvidence(evidenceInput("strategy"));
-    engine.addEvidence(evidenceInput("strategy"));
-    engine.addEvidence(evidenceInput("strategy"));
+    // Make strategy meet the 0.7 confidence threshold under the 0.6/0.4 model:
+    // all 4 criteria scored (coverage 1.0 → 0.6) + 3 evidence at strength 1.0
+    // (3.0 units / 12 possible → volume 0.25 × 0.4 = 0.1 → confidence 0.7).
+    engine.addEvidence(evidenceInput("strategy", { strength: 1.0 }));
+    engine.addEvidence(evidenceInput("strategy", { strength: 1.0 }));
+    engine.addEvidence(evidenceInput("strategy", { strength: 1.0 }));
     engine.updateDimensionScore("strategy", {
       digital_vision: 3,
       executive_sponsorship: 3,
+      investment_commitment: 3,
+      governance_structure: 3,
     }, []);
     const delta = engine.getDelta();
     expect(delta.dimensionsAssessed).toBe(1);
@@ -321,11 +338,13 @@ describe("AssessmentEngine.getDelta", () => {
 
   it("nextFocus points to the first unassessed dimension, or empty when all assessed", () => {
     const engine = new AssessmentEngine();
-    // Fully assess all 7 dimensions: 3+ evidence + all criteria scored per dim.
+    // Fully assess all 7 dimensions: all criteria scored + 5 evidence at
+    // strength 1.0 (enough volume to clear the 0.7 confidence threshold even
+    // for 5-criteria dimensions where totalPossible = 15).
     for (const dim of config.dimensions) {
-      engine.addEvidence(evidenceInput(dim.id));
-      engine.addEvidence(evidenceInput(dim.id));
-      engine.addEvidence(evidenceInput(dim.id));
+      for (let i = 0; i < 5; i++) {
+        engine.addEvidence(evidenceInput(dim.id, { strength: 1.0 }));
+      }
       const scores: Record<string, number> = {};
       for (const c of dim.criteria) scores[c.id] = 3;
       engine.updateDimensionScore(dim.id, scores, []);
@@ -338,6 +357,10 @@ describe("AssessmentEngine.getDelta", () => {
 
   it("exposes the current aiReadiness snapshot", () => {
     const engine = new AssessmentEngine();
+    engine.addEvidence(evidenceInput("strategy", { criterionId: "digital_vision", strength: 1.0 }));
+    engine.addEvidence(evidenceInput("strategy", { criterionId: "executive_sponsorship", strength: 1.0 }));
+    engine.addEvidence(evidenceInput("strategy", { criterionId: "investment_commitment", strength: 1.0 }));
+    engine.addEvidence(evidenceInput("strategy", { criterionId: "governance_structure", strength: 1.0 }));
     engine.updateDimensionScore("strategy", {
       digital_vision: 5,
       executive_sponsorship: 5,
@@ -347,15 +370,34 @@ describe("AssessmentEngine.getDelta", () => {
     const delta = engine.getDelta();
     expect(delta.aiReadiness.components.ai_strategy).toBe(100);
   });
+
+  it("getDelta carries org profile, framework version, and benchmark", () => {
+    const engine = new AssessmentEngine({ name: "Acme", industry: "Retail" });
+    engine.updateDimensionScore("strategy", { digital_vision: 4, executive_sponsorship: 4, investment_commitment: 4, governance_structure: 4 }, []);
+    const delta = engine.getDelta();
+    expect(delta.orgProfile.name).toBe("Acme");
+    expect(delta.frameworkVersion).toBe("2.0");
+    expect(delta.benchmark.byDimension.strategy).not.toBeNull();
+  });
+});
+
+describe("AssessmentEngine.startAssessment", () => {
+  it("startAssessment returns a seed message and profile", () => {
+    const engine = new AssessmentEngine({ name: "Acme" });
+    const seed = engine.startAssessment();
+    expect(seed.seedMessage.length).toBeGreaterThan(0);
+    expect(seed.orgProfile.name).toBe("Acme");
+    expect(seed.frameworkVersion).toBe("2.0");
+  });
 });
 
 describe("AssessmentEngine.checkComplete", () => {
   it("returns false when not all dimensions meet the confidence threshold", () => {
     const engine = new AssessmentEngine();
-    // Assess only strategy fully
-    engine.addEvidence(evidenceInput("strategy"));
-    engine.addEvidence(evidenceInput("strategy"));
-    engine.addEvidence(evidenceInput("strategy"));
+    // Assess only strategy fully (strength 1.0 to clear the 0.7 threshold)
+    engine.addEvidence(evidenceInput("strategy", { strength: 1.0 }));
+    engine.addEvidence(evidenceInput("strategy", { strength: 1.0 }));
+    engine.addEvidence(evidenceInput("strategy", { strength: 1.0 }));
     const scores: Record<string, number> = {};
     for (const c of config.dimensions[0].criteria) scores[c.id] = 3;
     engine.updateDimensionScore("strategy", scores, []);
@@ -365,9 +407,9 @@ describe("AssessmentEngine.checkComplete", () => {
   it("returns true only when all dimensions meet the confidence threshold", () => {
     const engine = new AssessmentEngine();
     for (const dim of config.dimensions) {
-      engine.addEvidence(evidenceInput(dim.id));
-      engine.addEvidence(evidenceInput(dim.id));
-      engine.addEvidence(evidenceInput(dim.id));
+      for (let i = 0; i < 5; i++) {
+        engine.addEvidence(evidenceInput(dim.id, { strength: 1.0 }));
+      }
       const scores: Record<string, number> = {};
       for (const c of dim.criteria) scores[c.id] = 3;
       engine.updateDimensionScore(dim.id, scores, []);

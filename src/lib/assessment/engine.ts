@@ -1,7 +1,11 @@
 import { v4 as uuidv4 } from "uuid";
 import { loadFramework, getDimensionById } from "../framework/config";
 import { FrameworkConfig } from "../framework/types";
-import { calculateAIReadinessScore } from "./scoring";
+import {
+  calculateAIReadinessScore,
+  calculateDimensionScore,
+  calculateBenchmarkDelta,
+} from "./scoring";
 import {
   AssessmentSession,
   DimensionAssessment,
@@ -82,15 +86,16 @@ export class AssessmentEngine {
     if (!dim) return;
 
     dim.criterionScores = { ...dim.criterionScores, ...criterionScores };
-    // Populate criterionConfidence for newly scored criteria (placeholder: full
-    // confidence). Task 4 replaces this with calculateCriterionConfidence().
-    for (const criterionId of Object.keys(criterionScores)) {
-      if (dim.criterionConfidence[criterionId] === undefined) {
-        dim.criterionConfidence[criterionId] = 1;
-      }
-    }
     dim.gaps = [...new Set([...dim.gaps, ...gaps])];
-    dim.score = this.calculateDimScore(dimensionId);
+
+    // Recompute per-criterion confidence for ALL scored criteria in this dimension.
+    for (const criterionId of Object.keys(dim.criterionScores)) {
+      dim.criterionConfidence[criterionId] = this.calculateCriterionConfidence(
+        dimensionId,
+        criterionId
+      );
+    }
+    dim.score = calculateDimensionScore(dim, this.config);
     dim.confidence = this.calculateDimConfidence(dimensionId);
     this.session.aiReadiness = calculateAIReadinessScore(
       this.session.dimensions,
@@ -127,6 +132,40 @@ export class AssessmentEngine {
       (d) => d.confidence >= this.config.confidenceThreshold
     ).length;
 
+    const byDimension: Record<string, number | null> = {};
+    let overallBenchmarkSum = 0;
+    let overallBenchmarkCount = 0;
+    for (const dim of this.config.dimensions) {
+      const dimAssessment = dims[dim.id];
+      const targets = dim.criteria.filter(
+        (c) => c.benchmarkTarget !== undefined
+      );
+      if (targets.length === 0) {
+        byDimension[dim.id] = null;
+        continue;
+      }
+      const assessedTargets = targets.filter(
+        (c) => dimAssessment?.criterionScores?.[c.id] !== undefined
+      );
+      if (assessedTargets.length === 0) {
+        byDimension[dim.id] = null;
+        continue;
+      }
+      const sumDelta = assessedTargets.reduce(
+        (s, c) =>
+          s +
+          calculateBenchmarkDelta(
+            dimAssessment.criterionScores[c.id],
+            c.benchmarkTarget
+          ),
+        0
+      );
+      const avg = sumDelta / assessedTargets.length;
+      byDimension[dim.id] = Math.round(avg * 10) / 10;
+      overallBenchmarkSum += avg;
+      overallBenchmarkCount++;
+    }
+
     return {
       dimensions: dims,
       aiReadiness: this.session.aiReadiness,
@@ -140,7 +179,32 @@ export class AssessmentEngine {
       nextFocus: this.getNextUnassessedDimension(),
       orgProfile: this.session.orgProfile,
       frameworkVersion: this.config.version,
-      benchmark: { overall: null, byDimension: {} },
+      benchmark: {
+        overall:
+          overallBenchmarkCount > 0
+            ? Math.round((overallBenchmarkSum / overallBenchmarkCount) * 10) /
+              10
+            : null,
+        byDimension,
+      },
+    };
+  }
+
+  /**
+   * Kick off an agent-led assessment. Returns a seed user-message + system
+   * context the agent uses to produce its opening turn WITHOUT requiring the
+   * user to speak first. Called by runAgentKickoff() (Task 8).
+   */
+  startAssessment(): {
+    seedMessage: string;
+    orgProfile: OrgProfile;
+    frameworkVersion: string;
+  } {
+    return {
+      seedMessage:
+        "(Assessment start — greet the organization and ask your first targeted question about Strategy & Leadership. Do not wait for the user to speak first.)",
+      orgProfile: this.session.orgProfile,
+      frameworkVersion: this.config.version,
     };
   }
 
@@ -166,36 +230,47 @@ export class AssessmentEngine {
     this.session.updatedAt = Date.now();
   }
 
-  private calculateDimScore(dimensionId: string): number {
+  private calculateCriterionConfidence(
+    dimensionId: string,
+    criterionId: string
+  ): number {
     const dim = this.session.dimensions[dimensionId];
-    const dimConfig = getDimensionById(this.config, dimensionId);
-    if (!dim || !dimConfig) return 0;
-
-    const scoredCriteria = Object.entries(dim.criterionScores);
-    if (scoredCriteria.length === 0) return 0;
-
-    let totalWeight = 0;
-    let weightedSum = 0;
-    for (const [criterionId, score] of scoredCriteria) {
-      const criterion = dimConfig.criteria.find((c) => c.id === criterionId);
-      const weight = criterion?.weight ?? 1;
-      weightedSum += score * weight;
-      totalWeight += weight;
-    }
-    return totalWeight > 0 ? Math.round((weightedSum / totalWeight) * 10) / 10 : 0;
+    if (!dim) return 0;
+    const threshold = Math.max(1, Math.round(this.config.evidenceThreshold));
+    const strengthUnits = dim.evidence
+      .filter((e) => e.criterionId === criterionId)
+      .reduce((sum, e) => sum + (e.strength ?? 0.5) * (e.weight ?? 1), 0);
+    return Math.min(1, strengthUnits / threshold);
   }
 
   private calculateDimConfidence(dimensionId: string): number {
     const dim = this.session.dimensions[dimensionId];
-    if (!dim) return 0;
-    const evidenceCount = dim.evidence.length;
-    const criteriaCount = Object.keys(dim.criterionScores).length;
     const dimConfig = getDimensionById(this.config, dimensionId);
-    if (!dimConfig) return 0;
+    if (!dim || !dimConfig) return 0;
 
-    const evidenceFactor = Math.min(1, evidenceCount / this.config.evidenceThreshold);
-    const criteriaFactor = Math.min(1, criteriaCount / dimConfig.criteria.length);
-    return (evidenceFactor + criteriaFactor) / 2;
+    const scoredCount = Object.keys(dim.criterionScores).length;
+    const coverageFactor =
+      dimConfig.criteria.length > 0
+        ? scoredCount / dimConfig.criteria.length
+        : 0;
+
+    const threshold = Math.max(1, Math.round(this.config.evidenceThreshold));
+    const totalPossibleStrength = dimConfig.criteria.length * threshold;
+    const actualStrength = dim.evidence.reduce(
+      (sum, e) => sum + (e.strength ?? 0.5) * (e.weight ?? 1),
+      0
+    );
+    const volumeFactor =
+      totalPossibleStrength > 0
+        ? Math.min(1, actualStrength / totalPossibleStrength)
+        : 0;
+
+    return coverageFactor * 0.6 + volumeFactor * 0.4;
+  }
+
+  private calculateDimScore(dimensionId: string): number {
+    const dim = this.session.dimensions[dimensionId];
+    return dim ? calculateDimensionScore(dim, this.config) : 0;
   }
 
   private getNextUnassessedDimension(): string {

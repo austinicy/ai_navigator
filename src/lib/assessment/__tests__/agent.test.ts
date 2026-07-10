@@ -91,12 +91,15 @@ describe("buildSystemPrompt", () => {
     const strategy = config.dimensions.find((d) => d.id === "strategy")!;
 
     // Add enough evidence (>= evidenceThreshold of 3) and score all criteria.
+    // Use strength 1.0 so the dimension clears the 0.7 confidence threshold
+    // under the 0.6/0.4 coverage+volume model.
     for (let i = 0; i < 3; i++) {
       engine.addEvidence({
         text: `evidence ${i}`,
         source: "conversation",
         dimensionId: "strategy",
         criterionId: strategy.criteria[i].id,
+        strength: 1.0,
       });
     }
     const scores: Record<string, number> = {};

@@ -1,53 +1,57 @@
 import { FrameworkConfig } from "../framework/types";
-import { DimensionAssessment, AIReadinessBreakdown, OrgProfile } from "./types";
+import { DimensionAssessment, AIReadinessBreakdown } from "./types";
 
+/**
+ * Confidence-weighted dimension score.
+ * Each criterion contributes score × weight × criterionConfidence; we divide by
+ * the sum of (weight × criterionConfidence) over SCORED criteria. Unscored or
+ * zero-confidence criteria contribute nothing, so a partially-probed dimension
+ * reflects only what was actually assessed.
+ */
 export function calculateDimensionScore(
   dimension: DimensionAssessment,
   config: FrameworkConfig
 ): number {
-  const dimConfig = config.dimensions.find(
-    (d) => d.id === dimension.dimensionId
-  );
+  const dimConfig = config.dimensions.find((d) => d.id === dimension.dimensionId);
   if (!dimConfig) return 0;
 
-  const totalWeight = dimConfig.criteria.reduce((sum, c) => sum + c.weight, 0);
-  const weightedSum = Object.entries(dimension.criterionScores).reduce(
-    (sum, [criterionId, score]) => {
-      const criterion = dimConfig.criteria.find((c) => c.id === criterionId);
-      const weight = criterion?.weight ?? 0;
-      return sum + score * weight;
-    },
-    0
-  );
-
-  return totalWeight > 0 ? weightedSum / totalWeight : 0;
+  let numerator = 0;
+  let denominator = 0;
+  for (const [criterionId, score] of Object.entries(dimension.criterionScores)) {
+    const criterion = dimConfig.criteria.find((c) => c.id === criterionId);
+    if (!criterion) continue;
+    const conf = dimension.criterionConfidence?.[criterionId] ?? 0;
+    if (conf <= 0) continue;
+    numerator += score * criterion.weight * conf;
+    denominator += criterion.weight * conf;
+  }
+  return denominator > 0 ? numerator / denominator : 0;
 }
 
 export function calculateOverallScore(
   dimensions: Record<string, DimensionAssessment>,
   config: FrameworkConfig
 ): number {
-  const assessedDims = Object.values(dimensions).filter(
+  const assessed = Object.values(dimensions).filter(
     (d) => d.confidence >= config.confidenceThreshold
   );
-  if (assessedDims.length === 0) return 0;
-
-  // Divide by the sum of ASSESSED dimension weights only, so a partially
-  // assessed org gets a 1–5 overall score reflecting what's been assessed,
-  // not a deflated value from dividing by all framework dimensions.
-  let totalWeight = 0;
-  const weightedSum = assessedDims.reduce((sum, dimAssessment) => {
-    const dimConfig = config.dimensions.find(
-      (d) => d.id === dimAssessment.dimensionId
-    );
+  if (assessed.length === 0) return 0;
+  let num = 0;
+  let den = 0;
+  for (const dimAssessment of assessed) {
+    const dimConfig = config.dimensions.find((d) => d.id === dimAssessment.dimensionId);
     const weight = dimConfig?.weight ?? 1;
-    totalWeight += weight;
-    return sum + dimAssessment.score * weight;
-  }, 0);
-
-  return totalWeight > 0 ? weightedSum / totalWeight : 0;
+    num += dimAssessment.score * weight;
+    den += weight;
+  }
+  return den > 0 ? num / den : 0;
 }
 
+/**
+ * Component-weighted AI Readiness score (0–100). Each component is the
+ * confidence-weighted criterion average, normalized 1–5 → 0–100. Components
+ * with no scored criteria are excluded (null), not counted as 0.
+ */
 export function calculateAIReadinessScore(
   dimensions: Record<string, DimensionAssessment>,
   config: FrameworkConfig
@@ -55,50 +59,45 @@ export function calculateAIReadinessScore(
   const components: Record<string, number | null> = {};
 
   for (const comp of config.aiReadinessComponents) {
-    const relevantCriteria = config.dimensions.flatMap((d) =>
+    const relevant = config.dimensions.flatMap((d) =>
       d.criteria
         .filter((c) => c.aiReadinessComponent === comp.id)
         .map((c) => ({ dimensionId: d.id, criterionId: c.id, weight: c.weight }))
     );
-
-    if (relevantCriteria.length === 0) {
+    if (relevant.length === 0) {
       components[comp.id] = null;
       continue;
     }
-
-    let totalScore = 0;
-    let totalWeight = 0;
-    let hasAnyScore = false;
-
-    for (const rc of relevantCriteria) {
+    let num = 0;
+    let den = 0;
+    let any = false;
+    for (const rc of relevant) {
       const dim = dimensions[rc.dimensionId];
-      if (dim && dim.criterionScores[rc.criterionId] !== undefined) {
-        totalScore += dim.criterionScores[rc.criterionId] * rc.weight;
-        totalWeight += rc.weight;
-        hasAnyScore = true;
-      }
+      const score = dim?.criterionScores?.[rc.criterionId];
+      const conf = dim?.criterionConfidence?.[rc.criterionId] ?? 0;
+      if (score === undefined || conf <= 0) continue;
+      num += score * rc.weight * conf;
+      den += rc.weight * conf;
+      any = true;
     }
-
-    components[comp.id] = hasAnyScore && totalWeight > 0
-      ? (totalScore / totalWeight / 5) * 100 // normalize 1-5 → 0-100
-      : null;
+    components[comp.id] = any && den > 0 ? (num / den / 5) * 100 : null;
   }
 
-  const scoredComponents = Object.values(components).filter(
-    (v): v is number => v !== null
-  );
-  const score =
-    scoredComponents.length > 0
-      ? scoredComponents.reduce((a, b) => a + b, 0) / scoredComponents.length
-      : 0;
-
+  // Weighted average over scored components using component.weight (default 1).
+  let num = 0;
+  let den = 0;
+  for (const comp of config.aiReadinessComponents) {
+    const v = components[comp.id];
+    if (v === null || v === undefined) continue;
+    const w = comp.weight ?? 1;
+    num += v * w;
+    den += w;
+  }
+  const score = den > 0 ? num / den : 0;
   return { score: Math.round(score), components };
 }
 
-export function getDimensionLevel(score: number): {
-  level: number;
-  name: string;
-} {
+export function getDimensionLevel(score: number): { level: number; name: string } {
   const levels = [
     { level: 1, name: "Ad Hoc" },
     { level: 2, name: "Emerging" },
@@ -106,6 +105,48 @@ export function getDimensionLevel(score: number): {
     { level: 4, name: "Advanced" },
     { level: 5, name: "Leading" },
   ];
-  const roundedLevel = Math.max(1, Math.min(5, Math.round(score)));
-  return levels[roundedLevel - 1];
+  const idx = Math.max(1, Math.min(5, Math.round(score)));
+  return levels[idx - 1];
+}
+
+/** Signed difference between a score and its benchmark target (0 if no target). */
+export function calculateBenchmarkDelta(score: number, benchmarkTarget: number | undefined): number {
+  if (benchmarkTarget === undefined) return 0;
+  return Math.round((score - benchmarkTarget) * 10) / 10;
+}
+
+export interface DependencyGap {
+  dimensionId: string;
+  criterionId: string;
+  unmetDependencies: string[];
+}
+
+/**
+ * Find criteria whose declared dependencies are not yet at level ≥ 3.
+ * Used by roadmap generation to sequence actions (don't scale AI before data
+ * foundations are solid).
+ */
+export function checkDependencyGaps(
+  dimensions: Record<string, DimensionAssessment>,
+  config: FrameworkConfig
+): DependencyGap[] {
+  const gaps: DependencyGap[] = [];
+  for (const dim of config.dimensions) {
+    const dimAssessment = dimensions[dim.id];
+    for (const criterion of dim.criteria) {
+      if (!criterion.dependsOn || criterion.dependsOn.length === 0) continue;
+      // Only consider criteria the org is actually attempting (has a score).
+      if (dimAssessment?.criterionScores?.[criterion.id] === undefined) continue;
+      const unmet: string[] = [];
+      for (const depId of criterion.dependsOn) {
+        const [depDimId, depCritId] = depId.split(".");
+        const depScore = dimensions[depDimId]?.criterionScores?.[depCritId];
+        if (depScore === undefined || depScore < 3) unmet.push(depId);
+      }
+      if (unmet.length > 0) {
+        gaps.push({ dimensionId: dim.id, criterionId: criterion.id, unmetDependencies: unmet });
+      }
+    }
+  }
+  return gaps;
 }

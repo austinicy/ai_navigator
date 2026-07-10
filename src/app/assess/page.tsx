@@ -32,6 +32,9 @@ function AssessPageContent() {
             dimensionsAssessed: 7,
             dimensionsRemaining: 0,
             nextFocus: "",
+            orgProfile: data.orgProfile,
+            frameworkVersion: data.frameworkVersion,
+            benchmark: { overall: null, byDimension: {} },
           };
           setDelta(demoDelta);
           setIsComplete(true);

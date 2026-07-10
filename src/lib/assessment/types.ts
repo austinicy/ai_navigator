@@ -5,6 +5,8 @@ export interface Evidence {
   dimensionId: string;
   criterionId?: string;
   timestamp: number;
+  strength?: number; // 0–1, default 0.5 (conversation) / 0.8 (document)
+  weight?: number;   // default 1; multiplier on strength
 }
 
 export interface DimensionAssessment {
@@ -14,6 +16,7 @@ export interface DimensionAssessment {
   evidence: Evidence[];
   gaps: string[];
   criterionScores: Record<string, number>; // criterionId → score
+  criterionConfidence: Record<string, number>; // criterionId → 0-1
 }
 
 export interface OrgProfile {
@@ -59,6 +62,9 @@ export interface AssessmentDelta {
   dimensionsAssessed: number;
   dimensionsRemaining: number;
   nextFocus: string;
+  orgProfile: OrgProfile;
+  frameworkVersion: string;
+  benchmark: { overall: number | null; byDimension: Record<string, number | null> };
 }
 
 export interface AgentResponse {

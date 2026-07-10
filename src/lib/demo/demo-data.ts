@@ -12,6 +12,7 @@ const demoDimensionScores: Record<string, DimensionAssessment> = {
     ],
     gaps: ["No formal governance structure for transformation decisions"],
     criterionScores: { digital_vision: 4, executive_sponsorship: 3, investment_commitment: 3, governance_structure: 2 },
+    criterionConfidence: { digital_vision: 1, executive_sponsorship: 1, investment_commitment: 1, governance_structure: 1 },
   },
   technology: {
     dimensionId: "technology",
@@ -24,6 +25,7 @@ const demoDimensionScores: Record<string, DimensionAssessment> = {
     ],
     gaps: ["Legacy system modernization", "API architecture needs overhaul", "No infrastructure automation"],
     criterionScores: { cloud_maturity: 3, tech_debt_management: 2, api_architecture: 2, infra_automation: 3, platform_engineering: 2 },
+    criterionConfidence: { cloud_maturity: 1, tech_debt_management: 1, api_architecture: 1, infra_automation: 1, platform_engineering: 1 },
   },
   data_ai: {
     dimensionId: "data_ai",
@@ -36,6 +38,7 @@ const demoDimensionScores: Record<string, DimensionAssessment> = {
     ],
     gaps: ["Data quality and accessibility", "No MLOps pipeline", "Data governance missing"],
     criterionScores: { data_quality: 2, data_governance: 1, analytics_maturity: 3, ml_ai_adoption: 2, mlops_maturity: 2 },
+    criterionConfidence: { data_quality: 1, data_governance: 1, analytics_maturity: 1, ml_ai_adoption: 1, mlops_maturity: 1 },
   },
   ai_governance: {
     dimensionId: "ai_governance",
@@ -48,6 +51,7 @@ const demoDimensionScores: Record<string, DimensionAssessment> = {
     ],
     gaps: ["No responsible AI policy", "No model monitoring", "No AI risk management"],
     criterionScores: { responsible_ai_policy: 1, risk_management: 1, compliance_framework: 2, model_monitoring: 1 },
+    criterionConfidence: { responsible_ai_policy: 1, risk_management: 1, compliance_framework: 1, model_monitoring: 1 },
   },
   culture: {
     dimensionId: "culture",
@@ -60,6 +64,7 @@ const demoDimensionScores: Record<string, DimensionAssessment> = {
     ],
     gaps: ["ML talent acquisition", "Change management maturity"],
     criterionScores: { digital_literacy: 4, change_readiness: 3, innovation_culture: 4, ai_talent_strategy: 2 },
+    criterionConfidence: { digital_literacy: 1, change_readiness: 1, innovation_culture: 1, ai_talent_strategy: 1 },
   },
   operations: {
     dimensionId: "operations",
@@ -72,6 +77,7 @@ const demoDimensionScores: Record<string, DimensionAssessment> = {
     ],
     gaps: ["Process digitization incomplete", "No ML deployment pipeline", "Delivery agility limited"],
     criterionScores: { process_digitization: 3, automation_level: 2, delivery_agility: 2, devops_maturity: 3 },
+    criterionConfidence: { process_digitization: 1, automation_level: 1, delivery_agility: 1, devops_maturity: 1 },
   },
   customer: {
     dimensionId: "customer",
@@ -84,6 +90,7 @@ const demoDimensionScores: Record<string, DimensionAssessment> = {
     ],
     gaps: ["Journey orchestration missing", "AI-powered CX not implemented"],
     criterionScores: { digital_channels: 4, personalization: 2, journey_orchestration: 2, feedback_loops: 3 },
+    criterionConfidence: { digital_channels: 1, personalization: 1, journey_orchestration: 1, feedback_loops: 1 },
   },
 };
 

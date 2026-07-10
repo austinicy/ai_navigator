@@ -47,6 +47,7 @@ export class AssessmentEngine {
         evidence: [],
         gaps: [],
         criterionScores: {},
+        criterionConfidence: {},
       };
     }
   }
@@ -81,6 +82,13 @@ export class AssessmentEngine {
     if (!dim) return;
 
     dim.criterionScores = { ...dim.criterionScores, ...criterionScores };
+    // Populate criterionConfidence for newly scored criteria (placeholder: full
+    // confidence). Task 4 replaces this with calculateCriterionConfidence().
+    for (const criterionId of Object.keys(criterionScores)) {
+      if (dim.criterionConfidence[criterionId] === undefined) {
+        dim.criterionConfidence[criterionId] = 1;
+      }
+    }
     dim.gaps = [...new Set([...dim.gaps, ...gaps])];
     dim.score = this.calculateDimScore(dimensionId);
     dim.confidence = this.calculateDimConfidence(dimensionId);
@@ -130,6 +138,9 @@ export class AssessmentEngine {
       dimensionsRemaining:
         this.config.dimensions.length - assessedCount,
       nextFocus: this.getNextUnassessedDimension(),
+      orgProfile: this.session.orgProfile,
+      frameworkVersion: this.config.version,
+      benchmark: { overall: null, byDimension: {} },
     };
   }
 

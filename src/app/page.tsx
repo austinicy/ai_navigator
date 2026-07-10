@@ -9,7 +9,7 @@ import { FinalCTA } from "@/components/landing/FinalCTA";
 
 export default function Home() {
   return (
-    <SiteShell footer={false}>
+    <SiteShell>
       <HeroSection />
       <div id="highlights" className="mx-auto w-full max-w-7xl px-4 md:px-6">
         <StatTiles />

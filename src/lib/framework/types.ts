@@ -8,6 +8,8 @@ export interface CriterionConfig {
   weight: number;
   aiReadinessComponent?: string; // maps to AI readiness component
   levels: LevelDescriptor;
+  benchmarkTarget?: number; // 1–5: typical industry-peer level (v2+)
+  dependsOn?: string[]; // other criterion ids that should precede this (v2+)
 }
 
 export interface DimensionConfig {
@@ -16,6 +18,7 @@ export interface DimensionConfig {
   weight: number;
   references: string[];
   criteria: CriterionConfig[];
+  weightingRationale?: string; // why this dimension weighs what it does (v2+)
 }
 
 export interface AIReadinessComponent {
@@ -23,6 +26,7 @@ export interface AIReadinessComponent {
   name: string;
   sourceDimension: string;
   description: string;
+  weight?: number; // default 1 (v2+)
 }
 
 export interface FrameworkConfig {
@@ -34,4 +38,5 @@ export interface FrameworkConfig {
   evidenceThreshold: number; // minimum evidence items per dimension
   confidenceThreshold: number; // minimum confidence (0-1) per dimension
   referenceFrameworks: Record<string, string>; // name → source
+  versionNotes?: string; // what changed vs prior version (v2+)
 }

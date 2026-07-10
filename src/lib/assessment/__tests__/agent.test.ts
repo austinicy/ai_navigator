@@ -1,11 +1,35 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { loadFramework } from "../../framework/config";
 import { AssessmentEngine } from "../engine";
-import { buildSystemPrompt } from "../agent";
+import { buildSystemPrompt, runAgentKickoff } from "../agent";
+import { chat } from "../../llm/client";
+
+// We mock the LLM chat() so the kickoff test doesn't need a live API key.
+// The mock factory provides all exports agent.ts imports from the llm client;
+// assistantToolCallMessage and toolResultMessage are kept as real-shaped builders
+// so the agent's message-array construction works against the mocked chat().
+vi.mock("../../llm/client", () => ({
+  chat: vi.fn(),
+  complete: vi.fn(),
+  assistantToolCallMessage: (r: { text: string; toolCalls: unknown[] }) =>
+    r.toolCalls.length
+      ? { role: "assistant", content: r.text, toolCalls: r.toolCalls }
+      : { role: "assistant", content: r.text },
+  toolResultMessage: (id: string, _name: string, content: string) => ({
+    role: "tool",
+    toolCallId: id,
+    name: _name,
+    content,
+  }),
+}));
 
 const config = loadFramework();
 
 describe("buildSystemPrompt", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("interpolates all 7 dimension names with their criteria", () => {
     const engine = new AssessmentEngine();
     const prompt = buildSystemPrompt(engine);
@@ -155,5 +179,45 @@ describe("buildSystemPrompt", () => {
     expect(prompt).not.toContain("{ORG_PROFILE}");
     expect(prompt).not.toContain("{CURRENT_SCORES}");
     expect(prompt).not.toContain("{INDUSTRY_BENCHMARK}");
+  });
+});
+
+describe("runAgentKickoff", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("produces an opening assistant message and seeds conversation history", async () => {
+    (chat as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      text: "Hello! I'm your AI Transformation Navigator. Let's start with Strategy & Leadership — who sponsors digital and AI transformation in your organization?",
+      toolCalls: [],
+      stopReason: "end_turn",
+    });
+    const engine = new AssessmentEngine();
+    const res = await runAgentKickoff(engine);
+    expect(res.message.length).toBeGreaterThan(0);
+    expect(res.message).toMatch(/strategy|leadership|sponsor/i);
+    // The opening is persisted as the first conversation-history entry (assistant role).
+    const history = engine.getSession().conversationHistory;
+    expect(history.length).toBeGreaterThanOrEqual(1);
+    expect(history[0].role).toBe("assistant");
+  });
+
+  it("does not require a user message before the first turn", async () => {
+    (chat as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      text: "Welcome — let's begin. Tell me about your organization's AI vision.",
+      toolCalls: [],
+      stopReason: "end_turn",
+    });
+    const engine = new AssessmentEngine();
+    const before = engine.getSession().conversationHistory.length;
+    await runAgentKickoff(engine);
+    const after = engine.getSession().conversationHistory.length;
+    // No user message should have been added — only the assistant's opening.
+    const userMsgs = engine
+      .getSession()
+      .conversationHistory.filter((m) => m.role === "user");
+    expect(userMsgs.length).toBe(before);
+    expect(after).toBe(before + 1);
   });
 });

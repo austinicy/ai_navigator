@@ -68,6 +68,45 @@ export function buildSystemPrompt(engine: AssessmentEngine): string {
     .replace("{INDUSTRY_BENCHMARK}", benchmarkText);
 }
 
+/**
+ * Execute a single tool call against the engine. Extracted from runAgentTurn's
+ * inline switch so runAgentKickoff can reuse the same tool dispatch. Returns a
+ * serializable result object that gets round-tripped back to the model.
+ */
+function executeTool(
+  name: string,
+  input: Record<string, unknown>,
+  engine: AssessmentEngine
+): Record<string, unknown> {
+  const session = engine.getSession();
+  switch (name) {
+    case "calculate_score": {
+      engine.updateDimensionScore(
+        input.dimensionId as string,
+        input.criterionScores as Record<string, number>,
+        input.gaps as string[]
+      );
+      return { success: true };
+    }
+    case "update_org_profile": {
+      engine.updateOrgProfile(input);
+      return { success: true };
+    }
+    case "estimate_benchmark": {
+      const benchmark = estimateIndustryBenchmark(
+        (input.industry as string) || session.orgProfile.industry || "Manufacturing",
+        (session.orgProfile.size as OrgProfile["size"]) || "mid-market",
+        loadFramework()
+      );
+      return { industry: input.industry, benchmark };
+    }
+    case "generate_roadmap":
+      return { triggered: true };
+    default:
+      return { error: `Unknown tool: ${name}` };
+  }
+}
+
 export async function runAgentTurn(
   userMessage: string,
   engine: AssessmentEngine
@@ -112,41 +151,7 @@ export async function runAgentTurn(
     // Execute each tool call and append a tool-result message back.
     for (const tc of result.toolCalls) {
       const input = tc.input;
-      let output: Record<string, unknown>;
-
-      switch (tc.name) {
-        case "calculate_score": {
-          engine.updateDimensionScore(
-            input.dimensionId as string,
-            input.criterionScores as Record<string, number>,
-            input.gaps as string[]
-          );
-          output = { success: true };
-          break;
-        }
-        case "update_org_profile": {
-          engine.updateOrgProfile(input);
-          output = { success: true };
-          break;
-        }
-        case "estimate_benchmark": {
-          const benchmark = estimateIndustryBenchmark(
-            (input.industry as string) || session.orgProfile.industry || "Manufacturing",
-            (session.orgProfile.size as OrgProfile["size"]) || "mid-market",
-            loadFramework()
-          );
-          output = { industry: input.industry, benchmark };
-          break;
-        }
-        case "generate_roadmap": {
-          output = { triggered: true };
-          break;
-        }
-        default: {
-          output = { error: `Unknown tool: ${tc.name}` };
-          break;
-        }
-      }
+      const output = executeTool(tc.name, input, engine);
 
       toolCallResults.push({ tool: tc.name, input, output });
       messages.push(toolResultMessage(tc.id, tc.name, JSON.stringify(output)));
@@ -166,6 +171,59 @@ export async function runAgentTurn(
     message: assistantMessage,
     assessment: engine.getDelta(),
     isComplete,
+    toolCalls: toolCallResults,
+  };
+}
+
+/**
+ * Kick off an agent-led assessment. The agent produces the opening turn
+ * (greeting + first targeted question) WITHOUT requiring the user to speak
+ * first. The opening is persisted as the first assistant message in
+ * conversation history so subsequent turns have context.
+ */
+export async function runAgentKickoff(
+  engine: AssessmentEngine
+): Promise<AgentResponse> {
+  const seed = engine.startAssessment();
+  const systemPrompt = buildSystemPrompt(engine);
+
+  // Seed the messages array with a system-level kickoff directive as a user
+  // turn the model sees, but do NOT persist it as a real user message — the
+  // user hasn't spoken. The assistant's reply becomes history's first entry.
+  const messages: LLMMessage[] = [{ role: "user", content: seed.seedMessage }];
+
+  const result = await chat(messages, agentTools, {
+    system: systemPrompt,
+    maxTokens: 1024,
+  });
+
+  // Execute any tool calls the agent emitted on kickoff (e.g. update_org_profile).
+  const toolCallResults: AgentResponse["toolCalls"] = [];
+  messages.push(assistantToolCallMessage(result));
+
+  if (result.toolCalls.length > 0 && result.stopReason === "tool_use") {
+    for (const tc of result.toolCalls) {
+      const output = executeTool(tc.name, tc.input, engine);
+      toolCallResults.push({ tool: tc.name, input: tc.input, output });
+      messages.push(toolResultMessage(tc.id, tc.name, JSON.stringify(output)));
+    }
+    // One follow-up round so the agent can produce its spoken opening after tool use.
+    const followup = await chat(messages, agentTools, {
+      system: systemPrompt,
+      maxTokens: 1024,
+    });
+    result.text += followup.text;
+  }
+
+  const openingText =
+    result.text ||
+    "Hello! I'm your AI Transformation Navigator. Let's begin by talking about your organization's Strategy & Leadership — who owns digital and AI transformation?";
+  engine.addConversationMessage("assistant", openingText);
+
+  return {
+    message: openingText,
+    assessment: engine.getDelta(),
+    isComplete: engine.checkComplete(),
     toolCalls: toolCallResults,
   };
 }

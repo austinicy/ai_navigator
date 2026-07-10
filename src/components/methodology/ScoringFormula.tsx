@@ -10,7 +10,7 @@ export function ScoringFormula() {
         <p><strong className="text-foreground">4. Digital Maturity Score.</strong> A weighted average of the dimensions assessed to sufficient confidence (≥{Math.round(0.7 * 100)}%), divided by assessed-dimension weights only.</p>
         <p><strong className="text-foreground">5. AI Readiness Score (0–100).</strong> A composite of 6 cross-cutting components (AI Strategy, Data, Infrastructure, Talent, Governance, Operational). Strategy and Data are weighted 1.5× because they are leading indicators. Each component is the confidence-weighted criterion average, normalized 1–5 → 0–100.</p>
         <p><strong className="text-foreground">6. Benchmark delta.</strong> Every criterion has an industry-typical target level; the report shows where you lead or lag your peers, adjusted for org size and regulation level.</p>
-        <p><strong className="text-foreground">7. Dependency map.</strong> 10 cross-dimension dependency edges (data → AI → MLOps → governance, cloud → data, etc.) sequence the roadmap so you never scale AI before the foundations are solid.</p>
+        <p><strong className="text-foreground">7. Dependency map.</strong> 12 cross-dimension dependency edges (data → AI → MLOps → governance, cloud → data, etc.) sequence the roadmap so you never scale AI before the foundations are solid.</p>
       </div>
     </section>
   );

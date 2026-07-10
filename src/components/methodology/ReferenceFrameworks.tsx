@@ -20,9 +20,9 @@ export function ReferenceFrameworks() {
   const config = loadFramework("v2.0");
   return (
     <section className="space-y-4">
-      <h2 className="text-2xl font-bold gradient-text">Grounded in 15+ Established Frameworks</h2>
+      <h2 className="text-2xl font-bold gradient-text">Grounded in 11 Established Frameworks</h2>
       <p className="text-sm text-muted-foreground">
-        This framework is not invented from scratch. It synthesizes the convergent dimensions identified across 15+ established digital transformation and AI maturity models. Each reference contributed something specific:
+        This framework is not invented from scratch. It synthesizes the convergent dimensions identified across 11 established digital transformation and AI maturity models. Each reference contributed something specific:
       </p>
       <div className="grid md:grid-cols-2 gap-3">
         {Object.entries(config.referenceFrameworks).map(([name, url]) => (

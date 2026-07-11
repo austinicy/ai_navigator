@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
       ...body,
       orgProfile: normalizeOrgProfile(body?.orgProfile),
     };
-    const config = loadFramework();
+    const config = loadFramework(session.frameworkVersion);
     const roadmap = await generateRoadmap(session, config);
     return NextResponse.json(roadmap);
   } catch (error) {

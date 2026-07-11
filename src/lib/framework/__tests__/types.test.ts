@@ -32,3 +32,55 @@ describe("framework v2 types", () => {
     }
   });
 });
+
+describe("framework v3 GenAI upgrade", () => {
+  const cfg = loadFramework("v3.0");
+
+  it("preserves seven core dimensions and adds a separate GenAI section", () => {
+    expect(cfg.dimensions.filter((dimension) => dimension.includeInOverall !== false)).toHaveLength(7);
+    const genai = cfg.dimensions.find((dimension) => dimension.id === "genai");
+    expect(genai?.includeInOverall).toBe(false);
+    expect(genai?.criteria).toHaveLength(7);
+  });
+
+  it("defines a weighted GenAI readiness component for every GenAI criterion", () => {
+    const components = cfg.genAIReadinessComponents ?? [];
+    const ids = new Set(components.map((component) => component.id));
+    const criteria = cfg.dimensions.find((dimension) => dimension.id === "genai")!.criteria;
+    expect(components).toHaveLength(7);
+    for (const criterion of criteria) {
+      expect(criterion.genAIReadinessComponent).toBeTruthy();
+      expect(ids.has(criterion.genAIReadinessComponent!)).toBe(true);
+      expect(criterion.targetLevel).toBeGreaterThanOrEqual(1);
+      expect(criterion.targetLevel).toBeLessThanOrEqual(5);
+      expect(Object.keys(criterion.levels)).toEqual(["1", "2", "3", "4", "5"]);
+    }
+  });
+
+  it("uses a structured source ledger and valid criterion source ids", () => {
+    const sources = cfg.referenceSources ?? [];
+    const sourceIds = new Set(sources.map((source) => source.id));
+    expect(sources.length).toBeGreaterThanOrEqual(15);
+    for (const source of sources) {
+      expect(new URL(source.url).protocol).toBe("https:");
+      expect(source.publisher.length).toBeGreaterThan(0);
+      expect(source.scope.length).toBeGreaterThan(0);
+    }
+    for (const dimension of cfg.dimensions) {
+      for (const sourceId of dimension.sourceIds ?? []) {
+        expect(sourceIds.has(sourceId), `${dimension.id} references ${sourceId}`).toBe(true);
+      }
+      for (const criterion of dimension.criteria) {
+        for (const sourceId of criterion.sourceIds ?? []) {
+          expect(sourceIds.has(sourceId), `${dimension.id}.${criterion.id} references ${sourceId}`).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("continues to load historical versions without reinterpretation", () => {
+    expect(loadFramework("1.0").version).toBe("1.0");
+    expect(loadFramework("2.0").version).toBe("2.0");
+    expect(loadFramework("3.0").version).toBe("3.0");
+  });
+});

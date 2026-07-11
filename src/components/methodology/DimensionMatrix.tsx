@@ -6,11 +6,8 @@ import { loadFramework } from "@/lib/framework/config";
 import { ChevronRight, Eye, EyeOff, Target } from "lucide-react";
 
 export function DimensionMatrix() {
-  const config = loadFramework("v2.0");
-  const [active, setActive] = useState(config.dimensions[0]?.id ?? "");
-  const [expandedCriteria, setExpandedCriteria] = useState<Set<string>>(
-    () => new Set()
-  );
+  const config = loadFramework();
+  const [open, setOpen] = useState<string | null>(config.dimensions[0]?.id ?? null);
   const totalCriteria = config.dimensions.reduce((n, d) => n + d.criteria.length, 0);
   const selected = config.dimensions.find((dim) => dim.id === active) ?? config.dimensions[0];
   const allSelectedExpanded = selected.criteria.every((criterion) =>
@@ -91,9 +88,10 @@ export function DimensionMatrix() {
                     </button>
                     {expandedCriteria.has(`${selected.id}.${c.id}`) && <div id={`criterion-detail-${selected.id}-${c.id}`} className="mt-3 border-t border-border/60 pt-3">
                       <div className="flex items-center justify-between gap-2">
-                        {c.benchmarkTarget !== undefined && (
+                        <span className="text-sm font-medium text-foreground">{c.name}</span>
+                        {(c.targetLevel ?? c.benchmarkTarget) !== undefined && (
                           <span className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-medium text-accent">
-                            <Target className="size-2.5" /> peer L{c.benchmarkTarget}
+                            <Target className="size-2.5" /> {c.targetLevel ? "target" : "peer"} L{c.targetLevel ?? c.benchmarkTarget}
                           </span>
                         )}
                       </div>

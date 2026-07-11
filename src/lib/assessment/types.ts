@@ -55,9 +55,15 @@ export interface AIReadinessBreakdown {
   components: Record<string, number | null>; // componentId → score (null if not yet assessed)
 }
 
+export interface GenAIReadinessBreakdown extends AIReadinessBreakdown {
+  assessedCriteria: number;
+  totalCriteria: number;
+}
+
 export interface AssessmentDelta {
   dimensions: Record<string, DimensionAssessment>;
   aiReadiness: AIReadinessBreakdown;
+  genAIReadiness?: GenAIReadinessBreakdown; // absent on v1/v2 sessions
   signalsCollected: number;
   dimensionsAssessed: number;
   dimensionsRemaining: number;
@@ -94,6 +100,7 @@ export interface AssessmentSession {
   orgProfile: OrgProfile;
   dimensions: Record<string, DimensionAssessment>;
   aiReadiness: AIReadinessBreakdown;
+  genAIReadiness?: GenAIReadinessBreakdown;
   conversationHistory: ChatMessage[];
   documents: UploadedDocument[];
   isComplete: boolean;

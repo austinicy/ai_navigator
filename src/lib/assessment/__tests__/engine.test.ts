@@ -20,10 +20,10 @@ function evidenceInput(
 }
 
 describe("AssessmentEngine construction", () => {
-  it("initializes a session with all 7 dimensions empty", () => {
+  it("initializes a session with every configured section empty", () => {
     const engine = new AssessmentEngine();
     const session = engine.getSession();
-    expect(Object.keys(session.dimensions).length).toBe(7);
+    expect(Object.keys(session.dimensions).length).toBe(config.dimensions.length);
     for (const dim of config.dimensions) {
       const d = session.dimensions[dim.id];
       expect(d).toBeDefined();
@@ -212,7 +212,7 @@ describe("AssessmentEngine.updateDimensionScore", () => {
     const engine = new AssessmentEngine();
     engine.updateDimensionScore("no_such_dim", { foo: 3 }, ["gap"]);
     // No dimension added, no crash
-    expect(Object.keys(engine.getSession().dimensions).length).toBe(7);
+    expect(Object.keys(engine.getSession().dimensions).length).toBe(config.dimensions.length);
   });
 });
 
@@ -302,7 +302,7 @@ describe("AssessmentEngine.getDelta", () => {
     const engine = new AssessmentEngine();
     const delta = engine.getDelta();
     expect(delta.dimensionsAssessed).toBe(0);
-    expect(delta.dimensionsRemaining).toBe(7);
+    expect(delta.dimensionsRemaining).toBe(config.dimensions.length);
     expect(delta.signalsCollected).toBe(0);
     // nextFocus is the first dimension (strategy) since none are assessed
     expect(delta.nextFocus).toBe("strategy");
@@ -324,7 +324,7 @@ describe("AssessmentEngine.getDelta", () => {
     }, []);
     const delta = engine.getDelta();
     expect(delta.dimensionsAssessed).toBe(1);
-    expect(delta.dimensionsRemaining).toBe(6);
+    expect(delta.dimensionsRemaining).toBe(config.dimensions.length - 1);
   });
 
   it("signalsCollected reflects total evidence across all dimensions", () => {
@@ -338,11 +338,10 @@ describe("AssessmentEngine.getDelta", () => {
 
   it("nextFocus points to the first unassessed dimension, or empty when all assessed", () => {
     const engine = new AssessmentEngine();
-    // Fully assess all 7 dimensions: all criteria scored + 5 evidence at
-    // strength 1.0 (enough volume to clear the 0.7 confidence threshold even
-    // for 5-criteria dimensions where totalPossible = 15).
+    // Fully assess every section: all criteria scored + 6 strong evidence
+    // items (enough volume for the seven-criterion GenAI section as well).
     for (const dim of config.dimensions) {
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 6; i++) {
         engine.addEvidence(evidenceInput(dim.id, { strength: 1.0 }));
       }
       const scores: Record<string, number> = {};
@@ -350,7 +349,7 @@ describe("AssessmentEngine.getDelta", () => {
       engine.updateDimensionScore(dim.id, scores, []);
     }
     const delta = engine.getDelta();
-    expect(delta.dimensionsAssessed).toBe(7);
+    expect(delta.dimensionsAssessed).toBe(config.dimensions.length);
     expect(delta.dimensionsRemaining).toBe(0);
     expect(delta.nextFocus).toBe("");
   });
@@ -376,7 +375,7 @@ describe("AssessmentEngine.getDelta", () => {
     engine.updateDimensionScore("strategy", { digital_vision: 4, executive_sponsorship: 4, investment_commitment: 4, governance_structure: 4 }, []);
     const delta = engine.getDelta();
     expect(delta.orgProfile.name).toBe("Acme");
-    expect(delta.frameworkVersion).toBe("2.0");
+    expect(delta.frameworkVersion).toBe(config.version);
     expect(delta.benchmark.byDimension.strategy).not.toBeNull();
   });
 });
@@ -387,7 +386,7 @@ describe("AssessmentEngine.startAssessment", () => {
     const seed = engine.startAssessment();
     expect(seed.seedMessage.length).toBeGreaterThan(0);
     expect(seed.orgProfile.name).toBe("Acme");
-    expect(seed.frameworkVersion).toBe("2.0");
+    expect(seed.frameworkVersion).toBe(config.version);
   });
 });
 
@@ -407,7 +406,7 @@ describe("AssessmentEngine.checkComplete", () => {
   it("returns true only when all dimensions meet the confidence threshold", () => {
     const engine = new AssessmentEngine();
     for (const dim of config.dimensions) {
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 6; i++) {
         engine.addEvidence(evidenceInput(dim.id, { strength: 1.0 }));
       }
       const scores: Record<string, number> = {};

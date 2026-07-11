@@ -28,7 +28,8 @@ function brandFor(name: string) {
 }
 
 export function ReferencesCarousel() {
-  const entries = Object.entries(loadFramework("v2.0").referenceFrameworks);
+  const config = loadFramework();
+  const entries = Object.entries(config.referenceFrameworks);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);

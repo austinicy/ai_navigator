@@ -64,6 +64,7 @@ export function RoadmapTab({ delta, orgName, industry, initialRoadmap }: Roadmap
       // Construct minimal session for roadmap API
       dimensions: delta.dimensions,
       aiReadiness: delta.aiReadiness,
+      genAIReadiness: delta.genAIReadiness,
       orgProfile: { name: orgName, industry },
       isComplete: true,
       id: "report",

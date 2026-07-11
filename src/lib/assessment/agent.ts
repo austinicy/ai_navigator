@@ -2,11 +2,10 @@ import { chat, assistantToolCallMessage, toolResultMessage } from "../llm/client
 import type { LLMMessage } from "../llm/types";
 import { agentTools } from "./tools";
 import { AssessmentEngine } from "./engine";
-import { loadFramework } from "../framework/config";
 import { AgentResponse, OrgProfile } from "./types";
 import { estimateIndustryBenchmark } from "./benchmarks";
 
-const SYSTEM_PROMPT = `You are an expert Digital Transformation Consultant conducting a maturity assessment using Framework v{FRAMEWORK_VERSION}. You assess ALL 7 dimensions to sufficient confidence.
+const SYSTEM_PROMPT = `You are an expert Digital Transformation Consultant conducting a maturity assessment using Framework v{FRAMEWORK_VERSION}. You assess every configured section to sufficient confidence.
 
 ## Assessment Dimensions & Criteria
 {FRAMEWORK_DIMENSIONS}
@@ -16,11 +15,12 @@ const SYSTEM_PROMPT = `You are an expert Digital Transformation Consultant condu
 2. GOAL-DIRECTED: After gathering evidence on one dimension (≥3 evidence items, confidence rising), transition to the next unassessed dimension. Never re-ask what you already know.
 3. CONVERSATIONAL: Ask one focused question at a time. Connect insights across dimensions ("You mentioned 60% cloud migration — that shapes your Data & AI readiness. How are data pipelines modernizing alongside it?").
 4. EVIDENCE-BASED: Every score must be traceable to evidence from the conversation or uploaded documents.
-5. DEPENDENCY-AWARE: Respect dependencies — don't probe advanced AI use cases until the data foundation is understood. Sequence your questioning data→AI→MLOps→governance where relevant.
-6. TOOL-USING: Use calculate_score when you have ≥3 evidence items for a dimension. Use update_org_profile when you learn industry/size/geography/constraints. Use estimate_benchmark when you know the industry. Use generate_roadmap ONLY when all 7 dimensions are assessed with sufficient confidence.
+5. DEPENDENCY-AWARE: Respect dependencies — don't probe advanced AI use cases until the data foundation is understood. Sequence your questioning data→AI→GenAIOps→governance→agentic controls where relevant.
+6. GENAI-AWARE: Distinguish unmanaged consumer use, governed enterprise adoption, custom GenAI applications, and autonomous agents. Probe foundation-model/platform strategy, governed knowledge and RAG, evaluation, security/safety, human oversight, and agent identity/tool controls when relevant.
+7. TOOL-USING: Use calculate_score when you have sufficient criterion evidence. Use update_org_profile when you learn industry/size/geography/constraints. Use estimate_benchmark when you know the industry. Use generate_roadmap ONLY when every configured section is assessed with sufficient confidence.
 
 ## Assessment Progress
-- Dimensions assessed: {DIMENSIONS_ASSESSED}/7
+- Sections assessed: {DIMENSIONS_ASSESSED}/{DIMENSION_COUNT}
 - Dimensions remaining: {DIMENSIONS_REMAINING}
 - Next focus: {NEXT_FOCUS}
 
@@ -37,7 +37,7 @@ const SYSTEM_PROMPT = `You are an expert Digital Transformation Consultant condu
 Respond naturally and concisely in conversation (1–2 short sentences). Prefer a question-led answer. After each exchange, decide whether to: (a) ask a follow-up, (b) calculate a score, (c) move to the next dimension, or (d) signal completion + generate_roadmap. When all dimensions are assessed, call generate_roadmap.`;
 
 export function buildSystemPrompt(engine: AssessmentEngine): string {
-  const config = loadFramework();
+  const config = engine.getConfig();
   const session = engine.getSession();
   const delta = engine.getDelta();
 
@@ -61,6 +61,7 @@ export function buildSystemPrompt(engine: AssessmentEngine): string {
     .replace("{FRAMEWORK_VERSION}", config.version)
     .replace("{FRAMEWORK_DIMENSIONS}", dimensionsText)
     .replace("{DIMENSIONS_ASSESSED}", String(delta.dimensionsAssessed))
+    .replace("{DIMENSION_COUNT}", String(config.dimensions.length))
     .replace("{DIMENSIONS_REMAINING}", String(delta.dimensionsRemaining))
     .replace("{NEXT_FOCUS}", delta.nextFocus || "Start with Strategy & Leadership")
     .replace("{ORG_PROFILE}", orgProfile)
@@ -96,7 +97,7 @@ function executeTool(
       const benchmark = estimateIndustryBenchmark(
         (input.industry as string) || session.orgProfile.industry || "Manufacturing",
         (session.orgProfile.size as OrgProfile["size"]) || "mid-market",
-        loadFramework()
+        engine.getConfig()
       );
       return { industry: input.industry, benchmark };
     }

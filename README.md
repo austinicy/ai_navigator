@@ -2,7 +2,7 @@
 
 The Operating System for Digital & AI Maturity — an agentic, AI-native platform that assesses an organization's digital & AI maturity through conversation, generates personalized transformation roadmaps, and displays real-time scorecards.
 
-Assess 7 dimensions of maturity across 30 criteria, get an AI Readiness sub-score, and receive a 3-phase transformation roadmap grounded in 15+ established reference frameworks (McKinsey DQ, Deloitte, MIT/Capgemini, Gartner, Microsoft MLOps, AWS ML Lens, and others).
+Assess seven core digital-maturity dimensions plus a dedicated GenAI and agentic-systems module across 37 criteria. The platform reports Digital Maturity, AI Readiness, and GenAI & Agentic Readiness separately, then generates a dependency-aware transformation roadmap grounded in 17 traceable primary sources.
 
 ## Screens
 
@@ -90,7 +90,7 @@ npm run mcp        # starts the stdio MCP server
 ```
 src/
 ├── lib/
-│   ├── framework/      # versioned JSON config (7 dims, 30 criteria, 6 AI-readiness components) + loader
+│   ├── framework/      # versioned v1/v2/v3 configs, source ledger, 7 core dimensions + GenAI module
 │   ├── assessment/     # types, scoring, AssessmentEngine (session state), Claude agent + tools
 │   ├── agora/          # shared Agora voice-session and transcript types
 │   ├── document/       # PDF/DOCX parser + AI signal extractor
@@ -127,7 +127,7 @@ For the complete current implementation, security model, API map, and known limi
 
 ## Framework grounding
 
-The maturity framework synthesizes 15+ established public models. See `src/lib/framework/v1.json` (`referenceFrameworks`) and the design spec at `docs/superpowers/specs/2026-07-09-ai-digital-transformation-scorecard-design.md`.
+Framework v3 uses a structured ledger of 17 direct primary sources, including NIST AI RMF and its GenAI Profile, ISO/IEC 42001 and 42005, AWS GenAI/Agentic/Responsible AI lenses, Microsoft MLOps/GenAIOps and agentic adoption guidance, Google Cloud's AI Adoption Framework, IMDA AI Verify, and OWASP GenAI/agentic security guidance. See `src/lib/framework/v3.ts` and `docs/framework-v3.md`.
 
 ## Project layout & history
 

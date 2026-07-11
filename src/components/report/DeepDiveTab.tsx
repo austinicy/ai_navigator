@@ -8,7 +8,7 @@ interface DeepDiveTabProps {
 }
 
 export function DeepDiveTab({ delta }: DeepDiveTabProps) {
-  const config = loadFramework();
+  const config = loadFramework(delta.frameworkVersion);
 
   return (
     <div className="space-y-6">

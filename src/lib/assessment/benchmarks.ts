@@ -33,6 +33,7 @@ export function estimateIndustryBenchmark(
   let sum = 0;
   let count = 0;
   for (const dim of config.dimensions) {
+    if (dim.includeInOverall === false) continue;
     const targets = dim.criteria.map((c) => c.benchmarkTarget).filter((t): t is number => t !== undefined);
     if (targets.length === 0) {
       byDimension[dim.id] = 3; // neutral fallback

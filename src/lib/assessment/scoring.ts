@@ -1,5 +1,5 @@
 import { FrameworkConfig } from "../framework/types";
-import { DimensionAssessment, AIReadinessBreakdown } from "./types";
+import { DimensionAssessment, AIReadinessBreakdown, GenAIReadinessBreakdown } from "./types";
 
 /**
  * Confidence-weighted dimension score.
@@ -40,11 +40,67 @@ export function calculateOverallScore(
   let den = 0;
   for (const dimAssessment of assessed) {
     const dimConfig = config.dimensions.find((d) => d.id === dimAssessment.dimensionId);
+    if (dimConfig?.includeInOverall === false) continue;
     const weight = dimConfig?.weight ?? 1;
     num += dimAssessment.score * weight;
     den += weight;
   }
   return den > 0 ? num / den : 0;
+}
+
+/** Cross-cutting GenAI and agentic readiness score (0–100), introduced in v3. */
+export function calculateGenAIReadinessScore(
+  dimensions: Record<string, DimensionAssessment>,
+  config: FrameworkConfig
+): GenAIReadinessBreakdown {
+  const definitions = config.genAIReadinessComponents ?? [];
+  const components: Record<string, number | null> = {};
+  let assessedCriteria = 0;
+  let totalCriteria = 0;
+
+  for (const component of definitions) {
+    const relevant = config.dimensions.flatMap((dimension) =>
+      dimension.criteria
+        .filter((criterion) => criterion.genAIReadinessComponent === component.id)
+        .map((criterion) => ({
+          dimensionId: dimension.id,
+          criterionId: criterion.id,
+          weight: criterion.weight,
+        }))
+    );
+    totalCriteria += relevant.length;
+    let numerator = 0;
+    let denominator = 0;
+    for (const item of relevant) {
+      const assessment = dimensions[item.dimensionId];
+      const score = assessment?.criterionScores?.[item.criterionId];
+      const confidence = assessment?.criterionConfidence?.[item.criterionId] ?? 0;
+      if (score === undefined || confidence <= 0) continue;
+      assessedCriteria++;
+      numerator += score * item.weight * confidence;
+      denominator += item.weight * confidence;
+    }
+    components[component.id] = denominator > 0
+      ? (numerator / denominator / 5) * 100
+      : null;
+  }
+
+  let numerator = 0;
+  let denominator = 0;
+  for (const component of definitions) {
+    const value = components[component.id];
+    if (value === null || value === undefined) continue;
+    const weight = component.weight ?? 1;
+    numerator += value * weight;
+    denominator += weight;
+  }
+
+  return {
+    score: denominator > 0 ? Math.round(numerator / denominator) : 0,
+    components,
+    assessedCriteria,
+    totalCriteria,
+  };
 }
 
 /**

@@ -5,6 +5,7 @@ import {
   calculateDimensionScore,
   calculateOverallScore,
   calculateAIReadinessScore,
+  calculateGenAIReadinessScore,
   getDimensionLevel,
   calculateBenchmarkDelta,
   checkDependencyGaps,
@@ -84,6 +85,28 @@ describe("calculateAIReadinessScore (component-weighted)", () => {
     expect(r.components.infrastructure_readiness).toBe(100);
     // both 100 → weighted avg still 100
     expect(r.score).toBe(100);
+  });
+});
+
+describe("calculateGenAIReadinessScore", () => {
+  const v3 = loadFramework("v3.0");
+
+  it("reports GenAI separately and does not alter the core digital score", () => {
+    const dimensions: Record<string, DimensionAssessment> = {};
+    for (const dimension of v3.dimensions) dimensions[dimension.id] = makeDim(dimension.id);
+    dimensions.strategy = makeDim("strategy", { score: 3, confidence: 0.9 });
+    dimensions.genai = makeDim("genai", {
+      score: 5,
+      confidence: 1,
+      criterionScores: Object.fromEntries(v3.dimensions.find((dimension) => dimension.id === "genai")!.criteria.map((criterion) => [criterion.id, 5])),
+      criterionConfidence: Object.fromEntries(v3.dimensions.find((dimension) => dimension.id === "genai")!.criteria.map((criterion) => [criterion.id, 1])),
+    });
+
+    expect(calculateOverallScore(dimensions, v3)).toBe(3);
+    const readiness = calculateGenAIReadinessScore(dimensions, v3);
+    expect(readiness.score).toBe(100);
+    expect(readiness.assessedCriteria).toBe(7);
+    expect(readiness.totalCriteria).toBe(7);
   });
 });
 

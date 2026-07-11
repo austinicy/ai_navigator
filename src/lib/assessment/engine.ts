@@ -13,6 +13,7 @@ import {
   OrgProfile,
   AssessmentDelta,
   UploadedDocument,
+  normalizeGapList,
 } from "./types";
 
 export class AssessmentEngine {
@@ -59,6 +60,58 @@ export class AssessmentEngine {
     }
   }
 
+  /**
+   * Restore a persisted assessment without recalculating or silently changing
+   * its score history. The snapshot is JSON-safe so it can live in GCS.
+   */
+  static fromSnapshot(snapshot: AssessmentSession): AssessmentEngine {
+    if (!snapshot || typeof snapshot !== "object" || !snapshot.frameworkVersion) {
+      throw new Error("Invalid assessment session snapshot");
+    }
+
+    const engine = new AssessmentEngine(snapshot.orgProfile, snapshot.frameworkVersion);
+    const restored = JSON.parse(JSON.stringify(snapshot)) as AssessmentSession;
+    const config = engine.getConfig();
+
+    restored.orgProfile = {
+      name: restored.orgProfile?.name ?? "",
+      industry: restored.orgProfile?.industry ?? "",
+      size: restored.orgProfile?.size ?? "mid-market",
+      geography: restored.orgProfile?.geography ?? "",
+      regulatoryEnvironment: restored.orgProfile?.regulatoryEnvironment ?? [],
+      existingInitiatives: restored.orgProfile?.existingInitiatives ?? [],
+      constraints: restored.orgProfile?.constraints ?? {},
+    };
+    restored.conversationHistory ??= [];
+    restored.documents ??= [];
+    restored.dimensions ??= {};
+
+    for (const dimension of config.dimensions) {
+      const saved = restored.dimensions[dimension.id];
+      restored.dimensions[dimension.id] = {
+        dimensionId: dimension.id,
+        score: saved?.score ?? 0,
+        confidence: saved?.confidence ?? 0,
+        evidence: saved?.evidence ?? [],
+        gaps: normalizeGapList(saved?.gaps),
+        criterionScores: saved?.criterionScores ?? {},
+        criterionConfidence: saved?.criterionConfidence ?? {},
+      };
+    }
+
+    restored.aiReadiness ??= { score: 0, components: {} };
+    restored.createdAt ??= Date.now();
+    restored.updatedAt ??= restored.createdAt;
+    restored.isComplete ??= false;
+    engine.session = restored;
+    return engine;
+  }
+
+  /** Return a deep JSON-safe copy suitable for durable object storage. */
+  toSnapshot(): AssessmentSession {
+    return JSON.parse(JSON.stringify(this.session)) as AssessmentSession;
+  }
+
   getSession(): AssessmentSession {
     return this.session;
   }
@@ -83,13 +136,13 @@ export class AssessmentEngine {
   updateDimensionScore(
     dimensionId: string,
     criterionScores: Record<string, number>,
-    gaps: string[]
+    gaps: unknown
   ): void {
     const dim = this.session.dimensions[dimensionId];
     if (!dim) return;
 
     dim.criterionScores = { ...dim.criterionScores, ...criterionScores };
-    dim.gaps = [...new Set([...dim.gaps, ...gaps])];
+    dim.gaps = [...new Set([...normalizeGapList(dim.gaps), ...normalizeGapList(gaps)])];
 
     // Recompute per-criterion confidence for ALL scored criteria in this dimension.
     for (const criterionId of Object.keys(dim.criterionScores)) {
@@ -131,7 +184,35 @@ export class AssessmentEngine {
         source: "document",
         dimensionId: signal.dimensionId,
         criterionId: signal.criterionId,
+        strength: signal.strength ?? 0.8,
       });
+    }
+
+    // Document evidence is actionable immediately. Group only explicitly
+    // grounded criterion scores, so an upload updates GenAI and other
+    // dimensions without relying on a synthetic follow-up chat message.
+    const scoreUpdates = new Map<
+      string,
+      { criterionScores: Record<string, number>; gaps: string[] }
+    >();
+    for (const signal of doc.signals) {
+      if (
+        !signal.criterionId ||
+        signal.score === undefined ||
+        !this.session.dimensions[signal.dimensionId]
+      ) {
+        continue;
+      }
+      const update = scoreUpdates.get(signal.dimensionId) ?? {
+        criterionScores: {},
+        gaps: [],
+      };
+      update.criterionScores[signal.criterionId] = signal.score;
+      if (signal.gap) update.gaps.push(signal.gap);
+      scoreUpdates.set(signal.dimensionId, update);
+    }
+    for (const [dimensionId, update] of scoreUpdates) {
+      this.updateDimensionScore(dimensionId, update.criterionScores, update.gaps);
     }
   }
 
@@ -197,6 +278,7 @@ export class AssessmentEngine {
             : null,
         byDimension,
       },
+      documentCount: this.session.documents.length,
     };
   }
 

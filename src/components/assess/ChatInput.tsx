@@ -43,6 +43,7 @@ export function ChatInput({
           size="icon"
           onClick={() => fileInputRef.current?.click()}
           title="Attach document"
+          disabled={isLoading}
         >
           <Paperclip className="size-4" />
         </Button>
@@ -50,10 +51,11 @@ export function ChatInput({
           ref={fileInputRef}
           type="file"
           className="hidden"
-          accept=".pdf,.docx,.doc"
+          accept=".pdf,.docx"
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (file) onUpload(file);
+            e.currentTarget.value = "";
           }}
         />
         <Button

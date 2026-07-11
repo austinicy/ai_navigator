@@ -34,15 +34,12 @@ export function ScoreSimulator() {
   const level = getDimensionLevel(dimScore);
 
   // Build a dimensions map where only strategy has scores, for the AI-readiness calc.
-  const allDims = useMemo(() => {
-    const map: Record<string, DimensionAssessment> = {};
-    for (const d of config.dimensions) {
-      map[d.id] = d.id === "strategy"
-        ? dimAssessment
-        : { dimensionId: d.id, score: 0, confidence: 0, evidence: [], gaps: [], criterionScores: {}, criterionConfidence: {} };
-    }
-    return map;
-  }, [config, scores]);
+  const allDims: Record<string, DimensionAssessment> = {};
+  for (const d of config.dimensions) {
+    allDims[d.id] = d.id === "strategy"
+      ? dimAssessment
+      : { dimensionId: d.id, score: 0, confidence: 0, evidence: [], gaps: [], criterionScores: {}, criterionConfidence: {} };
+  }
   const ai = calculateAIReadinessScore(allDims, config);
   const aiStrategy = ai.components.ai_strategy ?? 0;
 

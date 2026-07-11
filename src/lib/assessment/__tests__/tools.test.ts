@@ -52,11 +52,12 @@ describe("agentTools", () => {
     const tool = toolNamed("calculate_score");
     const props = propsOf("calculate_score");
 
-    it("requires dimensionId, criterionScores, and gaps", () => {
+    it("requires dimensionId, criterionScores, gaps, and evidence", () => {
       expect(tool.input_schema.required).toEqual([
         "dimensionId",
         "criterionScores",
         "gaps",
+        "evidence",
       ]);
     });
 
@@ -74,6 +75,14 @@ describe("agentTools", () => {
     it("defines gaps as an array of strings", () => {
       expect(props.gaps.type).toBe("array");
       expect(props.gaps.items).toEqual({ type: "string" });
+    });
+
+    it("defines evidence as an array of criterion-linked observations", () => {
+      expect(props.evidence.type).toBe("array");
+      expect(props.evidence.items?.type).toBe("object");
+      expect(props.evidence.items?.properties?.text.type).toBe("string");
+      expect(props.evidence.items?.properties?.criterionId.type).toBe("string");
+      expect(props.evidence.items?.properties?.strength.type).toBe("number");
     });
   });
 

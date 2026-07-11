@@ -19,7 +19,7 @@ const POSITIONS: Record<string, { x: number; y: number }> = {
 
 export function DependencyMap() {
   const config = useMemo(() => loadFramework(), []);
-  const [active, setActive] = useState<string | null>(null);
+  const [active, setActive] = useState<string>(config.dimensions[0]?.id ?? "strategy");
 
   // Build edges from criterion dependsOn: "dim.crit" → "dim.crit"
   // Skip self-loops (intra-dimension deps) and dedupe stacked edges so only

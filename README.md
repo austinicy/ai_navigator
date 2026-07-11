@@ -1,134 +1,65 @@
 # AI Transformation Navigator
 
-The Operating System for Digital & AI Maturity — an agentic, AI-native platform that assesses an organization's digital & AI maturity through conversation, generates personalized transformation roadmaps, and displays real-time scorecards.
+AI Transformation Navigator is a conversational digital, AI, GenAI, and agentic-AI maturity assessment. It gathers evidence through chat, documents, browser voice, or an MCP-connected IoT agent; applies deterministic scoring; and produces a live scorecard and transformation roadmap.
 
-Assess seven core digital-maturity dimensions plus a dedicated GenAI and agentic-systems module across 37 criteria. The platform reports Digital Maturity, AI Readiness, and GenAI & Agentic Readiness separately, then generates a dependency-aware transformation roadmap grounded in 17 traceable primary sources.
+## What it does
 
-## Screens
+- Assesses seven core dimensions and seven GenAI/agentic capabilities.
+- Reports Digital Maturity (1–5), AI Readiness (0–100), and GenAI & Agentic Readiness (0–100) separately.
+- Captures evidence from text conversation and text-based PDF/DOCX documents.
+- Provides three prepared, half-finished demo scenarios that a voice agent can continue.
+- Shares web and MCP sessions through JSON objects in Google Cloud Storage when `GCS_SESSION_BUCKET` is configured.
+- Supports Agora browser voice and a Streamable HTTP MCP interface for devices such as Xiaozhi ESP32 through Agora MyBot.
 
-1. **Landing** (`/`) — hero with two entry points: start a chat assessment, or upload docs first. Plus a "Load demo company" link.
-2. **Assessment** (`/assess`) — split view: conversational chat with the AI consultant (left) + live-updating scorecard with radar chart, dimension bars, AI Readiness breakdown, and evidence (right). Supports Agora-powered real-time voice and document upload (PDF/DOCX).
-3. **Report** (`/report`) — four tabs: Overview (scores + critical gaps), Deep Dive (per-dimension evidence & criterion scores), Roadmap (3-phase plan with action cards + quick wins), Export (print-to-PDF).
+## Quick start
 
-The `?demo=true` query param on `/assess` and `/report` loads a pre-populated **Acme Corporation** demo dataset so the full flow is viewable without completing an assessment.
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 20+
-- An API key for at least one LLM provider (any one enables the full live flow):
-  - **Anthropic** — get one at https://console.anthropic.com/
-  - **OpenAI** — get one at https://platform.openai.com/api-keys
-  - **DeepSeek** — get one at https://platform.deepseek.com/
-
-### Install & run
+Requirements: Node.js 20+ and one LLM provider key.
 
 ```bash
 npm install
-cp .env.example .env.local   # then add one provider key
+cp .env.example .env.local
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open http://localhost:3000. The product demo works at `/assess?demo=true` without an LLM key.
 
-### Choosing a provider
+## Main routes
 
-The app supports three LLM providers, selected by the `LLM_PROVIDER` env var
-(`anthropic`, `openai`, or `deepseek`). If `LLM_PROVIDER` is unset, the app
-auto-selects by key presence in this order: anthropic → openai → deepseek.
-Any single provider key is enough to run the live chat, document signal
-extraction, and roadmap generation.
+| Route | Purpose |
+|---|---|
+| `/` | Product overview and entry points |
+| `/assess` | Chat/voice assessment with live scorecard |
+| `/demos` | Prepared scenarios to continue |
+| `/history` | Shared session history when GCS is configured |
+| `/report` | Overview, evidence, roadmap, and export |
+| `/methodology` | Public assessment-method explanation |
 
-Voice mode uses Agora Conversational AI instead of the browser Web Speech API.
-Set `AGORA_APP_ID`, `AGORA_APP_CERTIFICATE`, `AGORA_CUSTOMER_ID`, and
-`AGORA_CUSTOMER_SECRET` in `.env.local`. It uses Agora's built-in ASR and the
-configured `OPENAI_API_KEY` for `gpt-4o-mini-tts`; set `LLM_PROVIDER=deepseek`
-to keep DeepSeek as the voice agent's conversational model.
+## Documentation
 
-Default models (override with `LLM_MODEL`):
+- [Technical architecture](docs/project-information.md)
+- [Assessment methodology and score breakdown](docs/assessment-methodology.md)
+- [Agent and IoT workflows](docs/agent-and-iot-workflows.md)
+- [Xiaozhi / Agora MyBot configuration](docs/xiaozhi-esp32-agent-prompt-and-settings.md)
+- [GCP Cloud Run deployment guide](docs/deployment.md)
+- [Limitations and future work](docs/limitations-and-future-work.md)
+- [Framework v3 and sources](docs/framework-v3.md)
 
-| Provider  | Default model      |
-|-----------|--------------------|
-| anthropic | `claude-sonnet-5`  |
-| openai    | `gpt-4o`           |
-| deepseek  | `deepseek-chat`    |
-
-DeepSeek is accessed via the OpenAI-compatible SDK with `baseURL=https://api.deepseek.com`.
-
-### Without an API key
-
-The app runs without any API key, but the live LLM features degrade gracefully:
-
-- Landing page, demo scorecard (`/assess?demo=true`), and the report's Overview / Deep Dive / Export tabs all work (they use the demo dataset).
-- The chat (`/api/chat`), document upload (`/api/upload`), and roadmap generation (`/api/roadmap`) call the LLM and will return errors — the UI shows friendly fallbacks (e.g. "Unable to generate roadmap") rather than crashing.
-
-So `npm run dev` + open `/assess?demo=true` is the quickest way to see the product without a key.
-
-### MCP server (voice device integration)
-
-A Model Context Protocol server exposing 10 tools (`start_assessment`, `chat`, `get_scorecard`, `generate_roadmap`, `upload_document`, `read_document`, `search_knowledge`, `calculate_score`, `estimate_benchmark`, `update_org_profile`):
+## Quality checks
 
 ```bash
+npm test
+npm run lint
+npm run build
 npm run build:mcp
-npm run mcp        # starts the stdio MCP server
-# or: npx ai-navigator-mcp
 ```
 
-## Tech Stack
+## Deployment
 
-- **Next.js 16** (App Router) + **React 19** + **TypeScript** (strict)
-- **Tailwind CSS v4** (dark neon theme) + **shadcn/ui** + **Recharts**
-- **Multi-provider LLM** — Anthropic (`@anthropic-ai/sdk`), OpenAI + DeepSeek (`openai` SDK) with tool use, selected by `LLM_PROVIDER` env var
-- **Agora Conversational AI** — RTC audio transport, built-in ASR, streamed transcripts, interruption handling, and OpenAI TTS
-- **pdf-parse** + **mammoth** for document extraction
-- **@modelcontextprotocol/sdk** for the MCP server
-- **vitest** for tests
+The supported demo deployment is two Cloud Run services plus a private GCS bucket:
 
-## Architecture
-
-```
-src/
-├── lib/
-│   ├── framework/      # versioned v1/v2/v3 configs, source ledger, 7 core dimensions + GenAI module
-│   ├── assessment/     # types, scoring, AssessmentEngine (session state), Claude agent + tools
-│   ├── agora/          # shared Agora voice-session and transcript types
-│   ├── document/       # PDF/DOCX parser + AI signal extractor
-│   ├── roadmap/        # roadmap types + Claude-based generator
-│   └── demo/           # pre-populated Acme Corporation demo session
-├── app/
-│   ├── page.tsx        # landing
-│   ├── assess/         # assessment page (split view)
-│   ├── report/         # report page (4 tabs)
-│   └── api/            # chat, Agora session, upload, assess, roadmap, demo routes
-├── components/         # landing/, assess/, report/, shared/, ui/
-├── hooks/              # chat, assessment, browser voice, and Agora RTC state
-└── mcp/                # MCP server + tools + cli
+```text
+Web browser / Agora voice → ai-navigator-web → GCS session JSON
+Agora MyBot / ESP32      → ai-navigator-mcp → GCS session JSON
 ```
 
-**Data flow:** versioned JSON framework → `AssessmentEngine` (session state + weighted scoring) → Claude agent with 4 tools (`calculate_score`, `update_org_profile`, `estimate_benchmark`, `generate_roadmap`) → `AssessmentDelta` (incremental update) → API → React hooks → live scorecard. Session state is shared between the assess and report pages via `localStorage` (`useAssessment` hook), with the demo dataset as fallback.
-
-**Voice flow:** browser microphone → Agora RTC channel → Agora ASR → configured OpenAI-compatible LLM → OpenAI TTS → Agora remote audio track. Transcription events return over the RTC data stream and render in the voice overlay. App certificates, customer credentials, provider keys, and agent management remain server-side.
-
-For the complete current implementation, security model, API map, and known limitations, see [Technical Project Information](docs/project-information.md).
-
-## Scripts
-
-| Script | Purpose |
-|---|---|
-| `npm run dev` | Next.js dev server |
-| `npm run build` | Production build |
-| `npm run start` | Run the production build |
-| `npm run lint` | ESLint |
-| `npm run test` | Run the Vitest suite (currently 188 tests) |
-| `npm run test:watch` | Vitest in watch mode |
-| `npm run build:mcp` | Compile the MCP server to `dist/mcp` |
-| `npm run mcp` | Start the MCP server (stdio) |
-
-## Framework grounding
-
-Framework v3 uses a structured ledger of 17 direct primary sources, including NIST AI RMF and its GenAI Profile, ISO/IEC 42001 and 42005, AWS GenAI/Agentic/Responsible AI lenses, Microsoft MLOps/GenAIOps and agentic adoption guidance, Google Cloud's AI Adoption Framework, IMDA AI Verify, and OWASP GenAI/agentic security guidance. See `src/lib/framework/v3.ts` and `docs/framework-v3.md`.
-
-## Project layout & history
-
-This branch (`ai-navigator-impl`) was built task-by-task from the plan at `docs/superpowers/plans/2026-07-09-ai-navigator-implementation.md`. See `.superpowers/sdd/progress.md` for the per-task progress ledger.
+Follow [docs/deployment.md](docs/deployment.md) for the exact GCP setup, custom domain, secrets, and MCP smoke tests.

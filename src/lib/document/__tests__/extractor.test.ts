@@ -5,7 +5,7 @@ describe("parseSignalsJson", () => {
   it("parses a clean JSON array of signals into Evidence objects", () => {
     const claudeOutput = `Here are the signals I found:
 
-[{"text":"Has a CDO","dimensionId":"strategy","criterionId":"executive_sponsorship"},{"text":"Uses AWS","dimensionId":"technology","criterionId":"cloud_infrastructure"}]
+[{"text":"Has a CDO","dimensionId":"strategy","criterionId":"executive_sponsorship"},{"text":"Uses AWS","dimensionId":"technology","criterionId":"cloud_maturity"}]
 
 Hope that helps!`;
 
@@ -22,7 +22,7 @@ Hope that helps!`;
       text: "Uses AWS",
       source: "document",
       dimensionId: "technology",
-      criterionId: "cloud_infrastructure",
+      criterionId: "cloud_maturity",
     });
     // Every signal gets a fresh unique id and a timestamp.
     for (const s of signals) {
@@ -61,5 +61,37 @@ Hope that helps!`;
     expect(signals).toHaveLength(1);
     expect(signals[0].text).toBe("Signal one");
     expect(signals[0].source).toBe("document");
+  });
+
+  it("drops hallucinated dimension and criterion IDs", () => {
+    const signals = parseSignalsJson(`[
+      {"text":"Valid strategy signal","dimensionId":"strategy","criterionId":"executive_sponsorship"},
+      {"text":"Unknown dimension","dimensionId":"imaginary"},
+      {"text":"Unknown criterion","dimensionId":"strategy","criterionId":"imaginary"}
+    ]`);
+
+    expect(signals).toHaveLength(1);
+    expect(signals[0].text).toBe("Valid strategy signal");
+    expect(signals[0].strength).toBe(0.8);
+  });
+
+  it("keeps grounded scores and gaps for direct document scoring", () => {
+    const signals = parseSignalsJson(`[
+      {
+        "text":"Teams use an internal RAG assistant with documented retrieval tests.",
+        "dimensionId":"genai",
+        "criterionId":"knowledge_rag",
+        "score":3.7,
+        "gap":"Retrieval freshness is not monitored."
+      }
+    ]`);
+
+    expect(signals).toHaveLength(1);
+    expect(signals[0]).toMatchObject({
+      dimensionId: "genai",
+      criterionId: "knowledge_rag",
+      score: 4,
+      gap: "Retrieval freshness is not monitored.",
+    });
   });
 });

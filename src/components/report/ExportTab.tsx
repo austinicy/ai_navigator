@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Download, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GradientCard } from "@/components/shared/GradientCard";
-import { AssessmentDelta } from "@/lib/assessment/types";
+import { AssessmentDelta, normalizeGapList } from "@/lib/assessment/types";
 import { loadFramework } from "@/lib/framework/config";
 import { calculateOverallScore, getDimensionLevel } from "@/lib/assessment/scoring";
 
@@ -39,8 +39,9 @@ export function ExportTab({ delta, orgName }: ExportTabProps) {
           const assessment = delta.dimensions[dim.id];
           const score = assessment?.score ?? 0;
           const level = getDimensionLevel(score);
-          const gaps = assessment?.gaps.join(", ") ?? "None";
-          const evidence = assessment?.evidence.map((e) => e.text).join("; ") ?? "N/A";
+          const gaps = assessment
+            ? normalizeGapList(assessment.gaps).join(", ") || "None"
+            : "None";
           return `
             <tr>
               <td style="padding:8px;border:1px solid #333;font-weight:600">${dim.name}</td>

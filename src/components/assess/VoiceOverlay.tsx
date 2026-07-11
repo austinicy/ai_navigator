@@ -6,36 +6,120 @@ import { Mic, MicOff, Keyboard, LoaderCircle } from "lucide-react";
 import { ChatMessage } from "./ChatMessage";
 import { useAgoraVoice } from "@/hooks/useAgoraVoice";
 import type { ChatMessage as ChatMessageType } from "@/lib/assessment/types";
+import type { AgoraTranscript } from "@/lib/agora/types";
 
 interface VoiceOverlayProps {
+  active: boolean;
   onExit: () => void;
   messages: ChatMessageType[];
-  sendMessage: (content: string) => Promise<void>;
+  syncVoiceTranscript: (content: string) => Promise<void>;
+  appendVoiceAssistant: (content: string) => Promise<void>;
+  refreshAssessment: () => Promise<void>;
+  onFinalTranscript: (transcript: AgoraTranscript) => void;
   isLoading: boolean;
 }
 
-export function VoiceOverlay({ onExit, messages, sendMessage, isLoading }: VoiceOverlayProps) {
+export function VoiceOverlay({
+  active,
+  onExit,
+  messages,
+  syncVoiceTranscript,
+  appendVoiceAssistant,
+  refreshAssessment,
+  onFinalTranscript,
+  isLoading,
+}: VoiceOverlayProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  void sendMessage;
-  void isLoading;
-  const { status, error, isMuted, transcripts, start, stop, toggleMute } =
-    useAgoraVoice();
+  const syncedTranscriptsRef = useRef(new Set<string>());
+  const syncQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const previousStatusRef = useRef<string>("idle");
+  const {
+    status,
+    error,
+    isMuted,
+    transcripts,
+    start,
+    toggleMute,
+    setMuted,
+    setRemoteAudioEnabled,
+    sharedContext,
+  } = useAgoraVoice();
 
-  // Start listening on mount; stop on unmount.
+  // Keep the Agora agent mounted across mode changes. Text mode mutes both the
+  // microphone and remote playback; returning to voice resumes the same RTC
+  // channel, agent, and transcript history instead of creating a new session.
   useEffect(() => {
-    // Defer startup by one task so React Strict Mode's development-only
-    // setup/cleanup probe cannot create two RTC sessions.
-    const timer = window.setTimeout(() => void start(), 0);
-    return () => {
-      window.clearTimeout(timer);
-      void stop();
+    let cancelled = false;
+
+    const applyMode = async () => {
+      setRemoteAudioEnabled(active);
+
+      if (active) {
+        if (status === "idle" || status === "error") {
+          await start();
+          if (cancelled) await setMuted(true);
+        } else if (status === "connected" && isMuted) {
+          await setMuted(false);
+        }
+      } else if (status === "connected" && !isMuted) {
+        await setMuted(true);
+      }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+
+    void applyMode();
+    return () => {
+      cancelled = true;
+    };
+  }, [active, isMuted, setMuted, setRemoteAudioEnabled, start, status]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, transcripts]);
+
+  // In shared-context mode, Agora's custom LLM endpoint has already persisted
+  // both sides of the turn and updated scoring; refresh after the finalized
+  // assistant transcript. The direct-provider localhost fallback persists the
+  // user through the assessment loop and appends Agora's actual reply.
+  useEffect(() => {
+    if (status === "connecting" && previousStatusRef.current !== "connecting") {
+      syncedTranscriptsRef.current.clear();
+    }
+    previousStatusRef.current = status;
+
+    for (const transcript of transcripts) {
+      if (!transcript.final || !transcript.text.trim() || syncedTranscriptsRef.current.has(transcript.id)) {
+        continue;
+      }
+
+      syncedTranscriptsRef.current.add(transcript.id);
+      const finalized = { ...transcript, text: transcript.text.trim() };
+      onFinalTranscript(finalized);
+
+      if (sharedContext) {
+        if (transcript.role === "assistant") {
+          syncQueueRef.current = syncQueueRef.current
+            .then(refreshAssessment)
+            .catch((cause) => console.error("Shared scorecard refresh failed:", cause));
+        }
+      } else {
+        const persist =
+          transcript.role === "user"
+            ? () => syncVoiceTranscript(finalized.text)
+            : () => appendVoiceAssistant(finalized.text);
+        syncQueueRef.current = syncQueueRef.current
+          .then(persist)
+          .catch((cause) => console.error("Voice context sync failed:", cause));
+      }
+    }
+  }, [
+    appendVoiceAssistant,
+    onFinalTranscript,
+    refreshAssessment,
+    sharedContext,
+    status,
+    syncVoiceTranscript,
+    transcripts,
+  ]);
 
   return (
     <div className="flex flex-col h-full">
@@ -108,7 +192,13 @@ export function VoiceOverlay({ onExit, messages, sendMessage, isLoading }: Voice
           )}
         </button>
         <p className="text-xs text-muted-foreground">
-          {status === "connected" ? (isMuted ? "Tap to unmute" : "Tap to mute") : "Tap to reconnect"}
+          {isLoading
+            ? "Updating live scorecard…"
+            : status === "connected"
+              ? isMuted
+                ? "Tap to unmute"
+                : "Tap to mute"
+              : "Tap to reconnect"}
         </p>
       </div>
     </div>

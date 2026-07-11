@@ -32,7 +32,7 @@ export default function MethodologyPage() {
               {config.description} Every signal becomes evidence, every score stays explainable, and every recommendation respects what must happen first.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link href="/assess" className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-[0_0_32px_color-mix(in_oklab,var(--primary)_28%,transparent)] transition hover:-translate-y-0.5 hover:bg-primary/90">
+              <Link href="/assess?new=true" className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-[0_0_32px_color-mix(in_oklab,var(--primary)_28%,transparent)] transition hover:-translate-y-0.5 hover:bg-primary/90">
                 Start your assessment <ArrowRight className="size-4" />
               </Link>
               <a href="#matrix" className="inline-flex h-12 items-center gap-2 rounded-xl border border-border bg-background/50 px-5 text-sm font-medium text-foreground backdrop-blur transition hover:border-primary/40">

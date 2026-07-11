@@ -104,7 +104,7 @@ Regulations should be implemented as jurisdiction overlays rather than baked int
 
 - `loadFramework("v1.0")`, `loadFramework("v2.0")`, and `loadFramework("v3.0")` remain supported.
 - New assessments use v3.
-- Demo data remains v2 and report components load the version stored in the assessment delta.
+- Demo scenarios seed the active v3 engine and report components load the version stored in the assessment delta.
 - Digital Maturity excludes cross-cutting sections through `includeInOverall: false`.
 - v2 `benchmarkTarget` remains readable; v3 introduces `targetLevel` for non-empirical goals.
 

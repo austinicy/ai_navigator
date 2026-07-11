@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { loadFramework } from "../../framework/config";
 import { AssessmentEngine } from "../engine";
-import type { DimensionAssessment, Evidence, UploadedDocument } from "../types";
+import type { Evidence, UploadedDocument } from "../types";
+import { normalizeGapList } from "../types";
 
 const config = loadFramework();
 
@@ -181,6 +182,19 @@ describe("AssessmentEngine.updateDimensionScore", () => {
     expect(dim.gaps.sort()).toEqual(["No budget", "No documented vision", "No sponsor"]);
   });
 
+  it("stores a single string gap as one gap instead of splitting it into characters", () => {
+    const engine = new AssessmentEngine();
+    engine.updateDimensionScore(
+      "data_ai",
+      { data_quality: 2 },
+      "Data quality and governance gaps limit scalable AI adoption."
+    );
+
+    expect(engine.getSession().dimensions.data_ai.gaps).toEqual([
+      "Data quality and governance gaps limit scalable AI adoption.",
+    ]);
+  });
+
   it("recomputes aiReadiness on the session after a score update", () => {
     const engine = new AssessmentEngine();
     // Before: aiReadiness score 0, components empty
@@ -294,6 +308,44 @@ describe("AssessmentEngine.addDocument", () => {
     const ev = engine.getSession().dimensions.strategy.evidence[0];
     expect(ev.id).not.toBe("sig-1");
     expect(ev.id).toBeTruthy();
+  });
+
+  it("scores grounded GenAI document signals and updates GenAI readiness", () => {
+    const engine = new AssessmentEngine();
+    engine.addDocument({
+      filename: "genai-strategy.pdf",
+      extractedText: "GenAI programme",
+      signals: [
+        {
+          id: "sig-genai",
+          text: "A managed RAG assistant has release evaluations and approved knowledge sources.",
+          source: "document",
+          dimensionId: "genai",
+          criterionId: "knowledge_rag",
+          timestamp: Date.now(),
+          strength: 1,
+          score: 3,
+          gap: "Knowledge freshness is not yet monitored.",
+        },
+      ],
+    });
+
+    const delta = engine.getDelta();
+    expect(delta.dimensions.genai.criterionScores.knowledge_rag).toBe(3);
+    expect(delta.dimensions.genai.gaps).toContain("Knowledge freshness is not yet monitored.");
+    expect(delta.genAIReadiness?.assessedCriteria).toBe(1);
+    expect(delta.genAIReadiness?.score).toBeGreaterThan(0);
+  });
+});
+
+describe("normalizeGapList", () => {
+  it("repairs legacy character-array gaps from saved sessions", () => {
+    expect(
+      normalizeGapList([
+        "D", "a", "t", "a", " ", "q", "u", "a", "l", "i", "t", "y",
+        "Low analytics maturity must be addressed.",
+      ])
+    ).toEqual(["Data quality", "Low analytics maturity must be addressed."]);
   });
 });
 

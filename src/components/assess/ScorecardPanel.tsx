@@ -47,7 +47,6 @@ export function ScorecardPanel({ delta, documentCount }: ScorecardPanelProps) {
           {config.dimensions.filter((dim) => dim.includeInOverall !== false).map((dim) => (
             <DimensionBar
               key={dim.id}
-              dimensionId={dim.id}
               name={dim.name}
               assessment={delta?.dimensions[dim.id]}
             />

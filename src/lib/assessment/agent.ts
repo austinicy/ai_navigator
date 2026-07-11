@@ -17,7 +17,8 @@ const SYSTEM_PROMPT = `You are an expert Digital Transformation Consultant condu
 4. EVIDENCE-BASED: Every score must be traceable to evidence from the conversation or uploaded documents.
 5. DEPENDENCY-AWARE: Respect dependencies — don't probe advanced AI use cases until the data foundation is understood. Sequence your questioning data→AI→GenAIOps→governance→agentic controls where relevant.
 6. GENAI-AWARE: Distinguish unmanaged consumer use, governed enterprise adoption, custom GenAI applications, and autonomous agents. Probe foundation-model/platform strategy, governed knowledge and RAG, evaluation, security/safety, human oversight, and agent identity/tool controls when relevant.
-7. TOOL-USING: Use calculate_score when you have sufficient criterion evidence. Use update_org_profile when you learn industry/size/geography/constraints. Use estimate_benchmark when you know the industry. Use generate_roadmap ONLY when every configured section is assessed with sufficient confidence.
+7. TOOL-USING: Use calculate_score incrementally whenever a user provides concrete evidence for one or more criteria. Include only new evidence from the latest user message and never invent scores for criteria not supported by that evidence. Use update_org_profile when you learn industry/size/geography/constraints. Use estimate_benchmark when you know the industry. Use generate_roadmap ONLY when every configured section is assessed with sufficient confidence.
+8. GENAI SCORING: When the user mentions GenAI, LLMs, copilots, foundation models, RAG, prompts, AI assistants/agents, model evaluation, AI safety, or agent permissions, call calculate_score for dimensionId "genai" in that same turn whenever a configured GenAI criterion is supported. Do not record this evidence only under Data & AI or Technology.
 
 ## Assessment Progress
 - Sections assessed: {DIMENSIONS_ASSESSED}/{DIMENSION_COUNT}
@@ -29,6 +30,9 @@ const SYSTEM_PROMPT = `You are an expert Digital Transformation Consultant condu
 
 ## Current Scores
 {CURRENT_SCORES}
+
+## Collected Evidence
+{COLLECTED_EVIDENCE}
 
 ## Industry Benchmark (estimated)
 {INDUSTRY_BENCHMARK}
@@ -42,12 +46,26 @@ export function buildSystemPrompt(engine: AssessmentEngine): string {
   const delta = engine.getDelta();
 
   const dimensionsText = config.dimensions
-    .map((d) => `- ${d.name} (${d.id}): ${d.criteria.map((c) => c.name).join(", ")}`)
+    .map(
+      (d) =>
+        `- ${d.name} (${d.id}): ${d.criteria
+          .map((c) => `${c.id} (${c.name})`)
+          .join(", ")}`
+    )
     .join("\n");
 
   const currentScores = Object.entries(session.dimensions)
     .map(([id, dim]) => `${id}: ${dim.score > 0 ? dim.score.toFixed(1) : "not yet assessed"} (confidence: ${(dim.confidence * 100).toFixed(0)}%)`)
     .join("\n");
+
+  const collectedEvidence = Object.values(session.dimensions)
+    .flatMap((dimension) => dimension.evidence)
+    .slice(-40)
+    .map(
+      (evidence) =>
+        `- [${evidence.source}] ${evidence.dimensionId}${evidence.criterionId ? `/${evidence.criterionId}` : ""}: ${evidence.text}`
+    )
+    .join("\n") || "No evidence collected yet.";
 
   const orgProfile = session.orgProfile.name
     ? `Name: ${session.orgProfile.name}\nIndustry: ${session.orgProfile.industry}\nSize: ${session.orgProfile.size}\nGeography: ${session.orgProfile.geography || "unknown"}`
@@ -66,6 +84,7 @@ export function buildSystemPrompt(engine: AssessmentEngine): string {
     .replace("{NEXT_FOCUS}", delta.nextFocus || "Start with Strategy & Leadership")
     .replace("{ORG_PROFILE}", orgProfile)
     .replace("{CURRENT_SCORES}", currentScores)
+    .replace("{COLLECTED_EVIDENCE}", collectedEvidence)
     .replace("{INDUSTRY_BENCHMARK}", benchmarkText);
 }
 
@@ -82,8 +101,38 @@ function executeTool(
   const session = engine.getSession();
   switch (name) {
     case "calculate_score": {
+      const evidence = Array.isArray(input.evidence) ? input.evidence : [];
+      const dimensionId = input.dimensionId as string;
+      const existingEvidence = session.dimensions[dimensionId]?.evidence ?? [];
+
+      for (const item of evidence) {
+        if (!item || typeof item !== "object") continue;
+        const candidate = item as Record<string, unknown>;
+        const text = typeof candidate.text === "string" ? candidate.text.trim() : "";
+        const criterionId =
+          typeof candidate.criterionId === "string" ? candidate.criterionId : undefined;
+        if (!text) continue;
+
+        const duplicate = existingEvidence.some(
+          (entry) =>
+            entry.text === text &&
+            entry.dimensionId === dimensionId &&
+            entry.criterionId === criterionId
+        );
+        if (duplicate) continue;
+
+        const rawStrength =
+          typeof candidate.strength === "number" ? candidate.strength : 0.7;
+        engine.addEvidence({
+          text,
+          source: "conversation",
+          dimensionId,
+          criterionId,
+          strength: Math.max(0, Math.min(1, rawStrength)),
+        });
+      }
       engine.updateDimensionScore(
-        input.dimensionId as string,
+        dimensionId,
         input.criterionScores as Record<string, number>,
         input.gaps as string[]
       );
@@ -110,10 +159,13 @@ function executeTool(
 
 export async function runAgentTurn(
   userMessage: string,
-  engine: AssessmentEngine
+  engine: AssessmentEngine,
+  options: { assessmentOnly?: boolean } = {}
 ): Promise<AgentResponse> {
   const session = engine.getSession();
-  const systemPrompt = buildSystemPrompt(engine);
+  const systemPrompt = options.assessmentOnly
+    ? `${buildSystemPrompt(engine)}\n\n## Voice scorecard sync\nThis is a finalized user transcript from a separate live voice conversation. Analyze it only for assessment state: update the organization profile and call calculate_score for every criterion supported by concrete evidence in this transcript. Include only newly observed evidence. Do not ask a follow-up question; your conversational text is discarded because Agora provides the spoken response.`
+    : buildSystemPrompt(engine);
 
   // Build the provider-agnostic messages array from conversation history + the
   // current user message. The agent owns this array across the loop rounds.
@@ -162,7 +214,7 @@ export async function runAgentTurn(
   }
 
   // C1 fix: persist the final assistant message for next-turn memory.
-  if (assistantMessage) {
+  if (assistantMessage && !options.assessmentOnly) {
     engine.addConversationMessage("assistant", assistantMessage);
   }
 

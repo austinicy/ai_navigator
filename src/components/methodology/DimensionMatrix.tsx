@@ -7,7 +7,10 @@ import { ChevronRight, Eye, EyeOff, Target } from "lucide-react";
 
 export function DimensionMatrix() {
   const config = loadFramework();
-  const [open, setOpen] = useState<string | null>(config.dimensions[0]?.id ?? null);
+  const [active, setActive] = useState(config.dimensions[0]?.id ?? "");
+  const [expandedCriteria, setExpandedCriteria] = useState<Set<string>>(
+    () => new Set()
+  );
   const totalCriteria = config.dimensions.reduce((n, d) => n + d.criteria.length, 0);
   const selected = config.dimensions.find((dim) => dim.id === active) ?? config.dimensions[0];
   const allSelectedExpanded = selected.criteria.every((criterion) =>
@@ -56,7 +59,7 @@ export function DimensionMatrix() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,color-mix(in_oklab,var(--primary)_12%,transparent),transparent_62%)]" />
           <div className="relative mx-auto aspect-square max-w-[390px]">
             <div className="absolute inset-[23%] flex flex-col items-center justify-center rounded-full border border-primary/30 bg-background/80 text-center shadow-[0_0_40px_color-mix(in_oklab,var(--primary)_15%,transparent)]">
-              <span className="text-4xl font-semibold text-primary">30</span><span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">signals of maturity</span>
+              <span className="text-4xl font-semibold text-primary">{totalCriteria}</span><span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">signals of maturity</span>
             </div>
             {config.dimensions.map((dim, index) => {
               const angle = (index / config.dimensions.length) * Math.PI * 2 - Math.PI / 2;

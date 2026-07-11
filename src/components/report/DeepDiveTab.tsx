@@ -1,5 +1,5 @@
 import { FileText, MessageSquare, AlertTriangle } from "lucide-react";
-import { AssessmentDelta } from "@/lib/assessment/types";
+import { AssessmentDelta, normalizeGapList } from "@/lib/assessment/types";
 import { loadFramework } from "@/lib/framework/config";
 import { getDimensionLevel } from "@/lib/assessment/scoring";
 
@@ -16,6 +16,7 @@ export function DeepDiveTab({ delta }: DeepDiveTabProps) {
         const assessment = delta.dimensions[dim.id];
         if (!assessment || assessment.score === 0) return null;
         const level = getDimensionLevel(assessment.score);
+        const gaps = normalizeGapList(assessment.gaps);
 
         return (
           <div key={dim.id} className="border border-border rounded-xl p-5">
@@ -36,8 +37,8 @@ export function DeepDiveTab({ delta }: DeepDiveTabProps) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
+            <div className="grid gap-4 mb-4 lg:grid-cols-[1.1fr_0.9fr]">
+              <div className="min-w-0">
                 <h4 className="text-xs font-semibold text-muted-foreground mb-2">Evidence</h4>
                 <ul className="space-y-1">
                   {assessment.evidence.slice(0, 5).map((e) => (
@@ -49,21 +50,21 @@ export function DeepDiveTab({ delta }: DeepDiveTabProps) {
                           <MessageSquare className="size-3" />
                         )}
                       </span>
-                      <span>{e.text}</span>
+                      <span className="min-w-0 break-words leading-relaxed">{e.text}</span>
                     </li>
                   ))}
                 </ul>
               </div>
-              <div>
+              <div className="min-w-0">
                 <h4 className="text-xs font-semibold text-muted-foreground mb-2">Identified Gaps</h4>
                 <ul className="space-y-1">
-                  {assessment.gaps.map((gap, i) => (
+                  {gaps.map((gap, i) => (
                     <li key={i} className="text-xs text-red-400/80 flex items-start gap-1.5">
                       <AlertTriangle className="size-3 shrink-0 mt-0.5" />
-                      <span>{gap}</span>
+                      <span className="min-w-0 break-words leading-relaxed">{gap}</span>
                     </li>
                   ))}
-                  {assessment.gaps.length === 0 && (
+                  {gaps.length === 0 && (
                     <li className="text-xs text-emerald-400">No gaps identified</li>
                   )}
                 </ul>

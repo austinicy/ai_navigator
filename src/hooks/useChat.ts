@@ -1,13 +1,33 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { AgentResponse, AssessmentDelta, ChatMessage } from "@/lib/assessment/types";
+import { getOrCreateActiveSessionId } from "@/lib/assessment/client-session";
 
-export function useChat() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+interface UploadResponse {
+  filename: string;
+  signalsCount: number;
+  assessment: AssessmentDelta;
+  documentCount: number;
+  error?: string;
+  warning?: string;
+}
+
+interface UseChatOptions {
+  initialMessages?: ChatMessage[];
+  initialDelta?: AssessmentDelta | null;
+  initialComplete?: boolean;
+}
+
+export function useChat(options: UseChatOptions = {}) {
+  const [messages, setMessages] = useState<ChatMessage[]>(() => options.initialMessages ?? []);
+  const [voiceMessages, setVoiceMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [currentDelta, setCurrentDelta] = useState<AssessmentDelta | null>(null);
-  const [isComplete, setIsComplete] = useState(false);
+  const [currentDelta, setCurrentDelta] = useState<AssessmentDelta | null>(
+    () => options.initialDelta ?? null
+  );
+  const [isComplete, setIsComplete] = useState(() => options.initialComplete ?? false);
+  const voiceSyncQueueRef = useRef<Promise<void>>(Promise.resolve());
 
   const sendMessage = useCallback(async (content: string) => {
     const userMessage: ChatMessage = {
@@ -23,7 +43,10 @@ export function useChat() {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: content, sessionId: "current" }),
+        body: JSON.stringify({
+          message: content,
+          sessionId: getOrCreateActiveSessionId(),
+        }),
       });
 
       if (!response.ok) throw new Error("Chat request failed");
@@ -54,20 +77,129 @@ export function useChat() {
     }
   }, []);
 
+  const syncVoiceTranscript = useCallback((content: string) => {
+    const sync = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: content,
+            sessionId: getOrCreateActiveSessionId(),
+            mode: "assessment_sync",
+          }),
+        });
+
+        if (!response.ok) throw new Error("Voice assessment sync failed");
+
+        const data: AgentResponse = await response.json();
+        setCurrentDelta(data.assessment);
+        setIsComplete(data.isComplete);
+      } catch (error) {
+        console.error("Voice assessment sync error:", error);
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Finalized transcripts can arrive close together. Keep assessment turns
+    // ordered so the in-memory session cannot be updated concurrently.
+    const queued = voiceSyncQueueRef.current.then(sync, sync);
+    voiceSyncQueueRef.current = queued.catch(() => undefined);
+    return queued;
+  }, []);
+
+  const appendVoiceAssistant = useCallback(async (content: string) => {
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: content,
+        sessionId: getOrCreateActiveSessionId(),
+        mode: "append_voice_assistant",
+      }),
+    });
+    if (!response.ok) throw new Error("Unable to persist voice assistant context");
+  }, []);
+
+  const refreshAssessment = useCallback(async () => {
+    const params = new URLSearchParams({ sessionId: getOrCreateActiveSessionId() });
+    const response = await fetch(`/api/chat?${params.toString()}`);
+    if (!response.ok) throw new Error("Unable to refresh shared assessment context");
+    const data: AgentResponse = await response.json();
+    setCurrentDelta(data.assessment);
+    setIsComplete(data.isComplete);
+  }, []);
+
+  const recordVoiceTranscript = useCallback(
+    (transcript: { id: string; role: "user" | "assistant"; text: string }) => {
+      setVoiceMessages((current) => {
+        const id = `voice-${transcript.id}`;
+        if (current.some((message) => message.id === id)) return current;
+        return [
+          ...current,
+          {
+            id,
+            role: transcript.role,
+            content: transcript.text,
+            timestamp: Date.now(),
+          },
+        ];
+      });
+    },
+    []
+  );
+
   const uploadDocument = useCallback(async (file: File) => {
     setIsLoading(true);
     try {
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("sessionId", getOrCreateActiveSessionId());
       const response = await fetch("/api/upload", {
         method: "POST",
         body: formData,
       });
-      if (!response.ok) throw new Error("Upload failed");
-      const data = await response.json();
+      const data = (await response.json()) as UploadResponse;
+      if (!response.ok) {
+        setMessages((current) => [
+          ...current,
+          {
+            id: `upload-error-${Date.now()}`,
+            role: "assistant",
+            content: `I couldn't process that document: ${data.error || "Upload failed"}`,
+            timestamp: Date.now(),
+          },
+        ]);
+        return null;
+      }
+      setCurrentDelta(data.assessment);
+      if (data.warning) {
+        setMessages((current) => [
+          ...current,
+          {
+            id: `upload-warning-${Date.now()}`,
+            role: "assistant",
+            content: data.warning!,
+            timestamp: Date.now(),
+          },
+        ]);
+      }
       return data;
     } catch (error) {
       console.error("Upload error:", error);
+      const message = error instanceof Error ? error.message : "Upload failed";
+      setMessages((current) => [
+        ...current,
+        {
+          id: `upload-error-${Date.now()}`,
+          role: "assistant",
+          content: `I couldn't process that document: ${message}`,
+          timestamp: Date.now(),
+        },
+      ]);
       return null;
     } finally {
       setIsLoading(false);
@@ -80,7 +212,10 @@ export function useChat() {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kickoff: true, sessionId: "current" }),
+        body: JSON.stringify({
+          kickoff: true,
+          sessionId: getOrCreateActiveSessionId(),
+        }),
       });
       if (!response.ok) throw new Error("Kickoff failed");
       const data: AgentResponse = await response.json();
@@ -111,10 +246,15 @@ export function useChat() {
 
   return {
     messages,
+    voiceMessages,
     isLoading,
     currentDelta,
     isComplete,
     sendMessage,
+    syncVoiceTranscript,
+    appendVoiceAssistant,
+    refreshAssessment,
+    recordVoiceTranscript,
     uploadDocument,
     startAssessment,
   };

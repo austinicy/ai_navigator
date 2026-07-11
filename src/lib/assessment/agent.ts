@@ -187,16 +187,32 @@ export async function runAgentKickoff(
 ): Promise<AgentResponse> {
   const seed = engine.startAssessment();
   const systemPrompt = buildSystemPrompt(engine);
+  const fallbackOpening =
+    "Hi there, can you tell me more about your company to get started?";
 
   // Seed the messages array with a system-level kickoff directive as a user
   // turn the model sees, but do NOT persist it as a real user message — the
   // user hasn't spoken. The assistant's reply becomes history's first entry.
   const messages: LLMMessage[] = [{ role: "user", content: seed.seedMessage }];
 
-  const result = await chat(messages, agentTools, {
-    system: systemPrompt,
-    maxTokens: 1024,
-  });
+  let result: Awaited<ReturnType<typeof chat>>;
+  try {
+    result = await chat(messages, agentTools, {
+      system: systemPrompt,
+      maxTokens: 1024,
+    });
+  } catch {
+    // Kickoff should never leave the assessment UI empty just because the LLM
+    // provider is missing or temporarily unavailable. Later user turns can
+    // retry the provider normally.
+    engine.addConversationMessage("assistant", fallbackOpening);
+    return {
+      message: fallbackOpening,
+      assessment: engine.getDelta(),
+      isComplete: engine.checkComplete(),
+      toolCalls: [],
+    };
+  }
 
   // Execute any tool calls the agent emitted on kickoff (e.g. update_org_profile).
   const toolCallResults: AgentResponse["toolCalls"] = [];
@@ -209,16 +225,19 @@ export async function runAgentKickoff(
       messages.push(toolResultMessage(tc.id, tc.name, JSON.stringify(output)));
     }
     // One follow-up round so the agent can produce its spoken opening after tool use.
-    const followup = await chat(messages, agentTools, {
-      system: systemPrompt,
-      maxTokens: 1024,
-    });
-    result.text += followup.text;
+    try {
+      const followup = await chat(messages, agentTools, {
+        system: systemPrompt,
+        maxTokens: 1024,
+      });
+      result.text += followup.text;
+    } catch {
+      // Any valid tool updates above are retained. The deterministic opening
+      // below still lets the user begin and a later turn can retry the LLM.
+    }
   }
 
-  const openingText =
-    result.text ||
-    "Hi there, can you tell me more about your company to get started?";
+  const openingText = result.text || fallbackOpening;
   engine.addConversationMessage("assistant", openingText);
 
   return {

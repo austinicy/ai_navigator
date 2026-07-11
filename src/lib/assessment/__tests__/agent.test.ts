@@ -221,4 +221,22 @@ describe("runAgentKickoff", () => {
     expect(userMsgs.length).toBe(before);
     expect(after).toBe(before + 1);
   });
+
+  it("returns and persists a fallback opening when the LLM is unavailable", async () => {
+    (chat as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error("Missing API key")
+    );
+    const engine = new AssessmentEngine();
+
+    const res = await runAgentKickoff(engine);
+
+    expect(res.message).toMatch(/tell me more about your company/i);
+    expect(res.assessment.frameworkVersion).toBe(config.version);
+    expect(res.toolCalls).toEqual([]);
+    expect(engine.getSession().conversationHistory).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ role: "assistant", content: res.message }),
+      ])
+    );
+  });
 });

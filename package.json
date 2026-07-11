@@ -19,6 +19,8 @@
     "@anthropic-ai/sdk": "^0.110.0",
     "@base-ui/react": "^1.6.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "agora-rtc-sdk-ng": "^4.24.5",
+    "agora-token": "^2.0.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.42.2",

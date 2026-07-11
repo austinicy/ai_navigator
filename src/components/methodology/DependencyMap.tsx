@@ -54,8 +54,9 @@ export function DependencyMap() {
           {edges.length} cross-dimension dependencies sequence the roadmap. Hover a node to see its connections.
         </p>
       </div>
-      <div className="rounded-2xl border border-border bg-card p-4">
-        <svg viewBox="0 0 100 100" className="h-auto w-full" role="img" aria-label="Dimension dependency map">
+      <div className="grid overflow-hidden rounded-2xl border border-border bg-card lg:grid-cols-[.9fr_1.1fr]">
+        <div className="border-b border-border bg-muted/10 p-5 lg:border-b-0 lg:border-r">
+        <svg viewBox="0 0 100 100" className="mx-auto h-auto w-full max-w-[440px]" role="img" aria-label="Dimension dependency map">
           {/* Edges */}
           {edges.map((e, i) => {
             const a = POSITIONS[e.from];
@@ -79,8 +80,15 @@ export function DependencyMap() {
             return (
               <g
                 key={dimId}
+                role="button"
+                tabIndex={0}
+                aria-label={`Inspect ${dim.name} dependencies`}
                 onMouseEnter={() => setActive(dimId)}
-                onMouseLeave={() => setActive(null)}
+                onFocus={() => setActive(dimId)}
+                onClick={() => setActive(dimId)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") setActive(dimId);
+                }}
                 className="cursor-pointer"
               >
                 <circle
@@ -101,6 +109,24 @@ export function DependencyMap() {
             );
           })}
         </svg>
+        </div>
+        <div className="flex min-h-[360px] flex-col justify-center p-7 md:p-10">
+          {(() => {
+            const dim = config.dimensions.find((item) => item.id === active)!;
+            const incoming = edges.filter((edge) => edge.to === active).map((edge) => config.dimensions.find((item) => item.id === edge.from)?.name).filter(Boolean);
+            const outgoing = edges.filter((edge) => edge.from === active).map((edge) => config.dimensions.find((item) => item.id === edge.to)?.name).filter(Boolean);
+            return <>
+              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Selected dimension</span>
+              <h3 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">{dim.name}</h3>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">{dim.weightingRationale}</p>
+              <div className="mt-7 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-border bg-background/50 p-4"><span className="text-[10px] uppercase tracking-wider text-muted-foreground">Depends on</span><p className="mt-2 text-sm font-medium text-foreground">{incoming.length ? incoming.join(" · ") : "Foundational starting point"}</p></div>
+                <div className="rounded-xl border border-border bg-background/50 p-4"><span className="text-[10px] uppercase tracking-wider text-muted-foreground">Unlocks</span><p className="mt-2 text-sm font-medium text-foreground">{outgoing.length ? outgoing.join(" · ") : "Enterprise outcomes"}</p></div>
+              </div>
+              <p className="mt-5 text-xs text-muted-foreground">Hover, focus, or click a node to inspect its role in roadmap sequencing.</p>
+            </>;
+          })()}
+        </div>
       </div>
     </section>
   );

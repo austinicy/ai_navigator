@@ -1,8 +1,10 @@
 // src/hooks/useTheme.ts
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { THEME_STORAGE_KEY, type Theme } from "@/lib/theme";
+
+const THEME_CHANGE_EVENT = "ai-navigator-theme-change";
 
 function applyThemeClass(theme: Theme) {
   const d = document.documentElement;
@@ -10,40 +12,47 @@ function applyThemeClass(theme: Theme) {
   d.classList.add(theme);
 }
 
+function subscribeToTheme(onStoreChange: () => void) {
+  window.addEventListener(THEME_CHANGE_EVENT, onStoreChange);
+  window.addEventListener("storage", onStoreChange);
+  return () => {
+    window.removeEventListener(THEME_CHANGE_EVENT, onStoreChange);
+    window.removeEventListener("storage", onStoreChange);
+  };
+}
+
+function getThemeSnapshot(): Theme {
+  return document.documentElement.classList.contains("light") ? "light" : "dark";
+}
+
+function getServerThemeSnapshot(): Theme {
+  return "dark";
+}
+
 export function useTheme() {
-  const [theme, setThemeState] = useState<Theme>("dark");
+  const theme = useSyncExternalStore(
+    subscribeToTheme,
+    getThemeSnapshot,
+    getServerThemeSnapshot
+  );
 
   useEffect(() => {
-    // Read the class the init script set, or localStorage, else default dark.
-    const stored = (typeof window !== "undefined" && localStorage.getItem(THEME_STORAGE_KEY)) as Theme | null;
-    const initial: Theme =
-      stored ?? (document.documentElement.classList.contains("light") ? "light" : "dark");
-    setThemeState(initial);
-    applyThemeClass(initial);
-  }, []);
+    applyThemeClass(theme);
+  }, [theme]);
 
   const setTheme = useCallback((t: Theme) => {
-    setThemeState(t);
     applyThemeClass(t);
     try {
-      localStorage.setItem(THEME_STORAGE_KEY, t);
+      window.localStorage.setItem(THEME_STORAGE_KEY, t);
     } catch {
       /* storage unavailable */
     }
+    window.dispatchEvent(new Event(THEME_CHANGE_EVENT));
   }, []);
 
   const toggle = useCallback(() => {
-    setThemeState((prev) => {
-      const next: Theme = prev === "dark" ? "light" : "dark";
-      applyThemeClass(next);
-      try {
-        localStorage.setItem(THEME_STORAGE_KEY, next);
-      } catch {
-        /* storage unavailable */
-      }
-      return next;
-    });
-  }, []);
+    setTheme(theme === "dark" ? "light" : "dark");
+  }, [setTheme, theme]);
 
   return { theme, setTheme, toggle };
 }

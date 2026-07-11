@@ -78,4 +78,45 @@ describe("useContinuousVoice", () => {
     expect(recognition.start).toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
+
+  it("resumes listening after speech synthesis errors when the mic was active", async () => {
+    const recognition = new MockRecognition();
+    let utterance: {
+      onerror: (() => void) | null;
+    } | null = null;
+    const captureUtterance = (value: { onerror: (() => void) | null }) => {
+      utterance = value;
+    };
+
+    class MockUtterance {
+      onerror: (() => void) | null = null;
+
+      constructor(text: string) {
+        void text;
+        captureUtterance(this);
+      }
+    }
+
+    vi.stubGlobal("SpeechRecognition", vi.fn(function () { return recognition; }));
+    vi.stubGlobal("SpeechSynthesisUtterance", MockUtterance);
+    Object.defineProperty(window, "speechSynthesis", {
+      value: { speak: vi.fn(), cancel: vi.fn() },
+      configurable: true,
+    });
+
+    const { useContinuousVoice } = await import("../useContinuousVoice");
+    const { result } = renderHook(() => useContinuousVoice({ onTranscript: vi.fn() }));
+
+    act(() => result.current.start());
+    recognition.start.mockClear();
+
+    const speaking = result.current.speak("hello");
+    act(() => utterance?.onerror?.());
+    await speaking;
+
+    expect(recognition.stop).toHaveBeenCalled();
+    expect(recognition.start).toHaveBeenCalled();
+    expect(result.current.isListening).toBe(true);
+    vi.unstubAllGlobals();
+  });
 });

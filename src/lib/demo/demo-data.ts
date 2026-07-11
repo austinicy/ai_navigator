@@ -1,4 +1,5 @@
-import { AssessmentSession, DimensionAssessment, Evidence, AIReadinessBreakdown } from "../assessment/types";
+import { AssessmentSession, DimensionAssessment, AIReadinessBreakdown } from "../assessment/types";
+import type { Roadmap } from "../roadmap/types";
 
 const demoDimensionScores: Record<string, DimensionAssessment> = {
   strategy: {
@@ -106,6 +107,128 @@ const demoAIReadiness: AIReadinessBreakdown = {
   },
 };
 
+const demoRoadmap: Roadmap = {
+  orgName: "Acme Corporation",
+  industry: "Manufacturing",
+  overallScore: 2.7,
+  aiReadinessScore: 28,
+  generatedAt: Date.now(),
+  criticalGaps: [
+    "Responsible AI policy and model monitoring are not yet in place.",
+    "Data quality and governance gaps limit scalable AI use cases.",
+    "Legacy ERP and API architecture constrain process automation.",
+  ],
+  quickWins: [
+    {
+      id: "qw-data-quality",
+      title: "Stand up a data quality scorecard",
+      description: "Track completeness, accuracy, and freshness for the highest-value production and customer datasets.",
+      dimensionId: "data_ai",
+      effort: "low",
+      impact: "high",
+      urgency: "high",
+      successMetrics: ["Top 10 datasets have named owners", "Weekly quality dashboard reviewed by data council"],
+    },
+    {
+      id: "qw-ai-policy",
+      title: "Publish interim responsible AI guardrails",
+      description: "Create lightweight rules for approved AI use, human review, data privacy, and vendor model evaluation.",
+      dimensionId: "ai_governance",
+      effort: "low",
+      impact: "high",
+      urgency: "high",
+      successMetrics: ["Policy approved by legal and technology leadership", "All active AI pilots registered"],
+    },
+  ],
+  phases: [
+    {
+      id: "phase-1",
+      name: "Stabilize Foundations",
+      timeframe: "0-90 days",
+      description: "Close governance and data reliability gaps before expanding AI pilots.",
+      actions: [
+        {
+          id: "policy-baseline",
+          title: "Launch responsible AI baseline",
+          description: "Define risk tiers, review gates, model owner responsibilities, and minimum monitoring expectations.",
+          dimensionId: "ai_governance",
+          effort: "medium",
+          impact: "high",
+          urgency: "high",
+          successMetrics: ["Risk tiering model adopted", "AI inventory covers all known pilots"],
+        },
+        {
+          id: "data-ownership",
+          title: "Assign critical data owners",
+          description: "Name accountable business and technical owners for demand, inventory, customer, and supplier datasets.",
+          dimensionId: "data_ai",
+          effort: "medium",
+          impact: "high",
+          urgency: "high",
+          successMetrics: ["Owner named for each critical dataset", "Quality targets agreed for each dataset"],
+        },
+      ],
+    },
+    {
+      id: "phase-2",
+      name: "Modernize Delivery",
+      timeframe: "3-6 months",
+      description: "Improve integration, automation, and cloud operating practices to reduce delivery friction.",
+      actions: [
+        {
+          id: "api-roadmap",
+          title: "Create API modernization roadmap",
+          description: "Prioritize gateway, ERP integration, and service boundaries for processes that block automation.",
+          dimensionId: "technology",
+          effort: "high",
+          impact: "high",
+          urgency: "medium",
+          successMetrics: ["API gateway pilot live", "Top 5 integration pain points ranked and funded"],
+        },
+        {
+          id: "ml-delivery",
+          title: "Extend CI/CD patterns to ML models",
+          description: "Add reproducible model packaging, test gates, and deployment promotion for demand forecasting models.",
+          dimensionId: "operations",
+          effort: "medium",
+          impact: "medium",
+          urgency: "medium",
+          successMetrics: ["Forecast model has automated test/deploy pipeline", "Rollback process documented"],
+        },
+      ],
+    },
+    {
+      id: "phase-3",
+      name: "Scale AI Value",
+      timeframe: "6-12 months",
+      description: "Use stronger foundations to scale AI in customer, supply chain, and operations workflows.",
+      actions: [
+        {
+          id: "personalized-cx",
+          title: "Pilot AI-assisted customer personalization",
+          description: "Use governed customer segments and feedback loops to personalize portal and mobile recommendations.",
+          dimensionId: "customer",
+          effort: "medium",
+          impact: "high",
+          urgency: "medium",
+          successMetrics: ["Pilot improves conversion or retention by 5%", "Human review workflow defined"],
+          dependencies: ["data-ownership", "policy-baseline"],
+        },
+        {
+          id: "talent-plan",
+          title: "Build the AI talent plan",
+          description: "Blend targeted hiring, partner support, and internal upskilling for product, data, and platform teams.",
+          dimensionId: "culture",
+          effort: "medium",
+          impact: "medium",
+          urgency: "medium",
+          successMetrics: ["Role gap map complete", "Two cohorts complete applied AI training"],
+        },
+      ],
+    },
+  ],
+};
+
 export function getDemoSession(): Partial<AssessmentSession> {
   return {
     id: "demo-acme-corp",
@@ -129,4 +252,8 @@ export function getDemoSession(): Partial<AssessmentSession> {
     createdAt: Date.now() - 3600000,
     updatedAt: Date.now(),
   };
+}
+
+export function getDemoRoadmap(): Roadmap {
+  return demoRoadmap;
 }

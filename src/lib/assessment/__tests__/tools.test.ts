@@ -5,11 +5,19 @@ import { agentTools } from "../tools";
 // `input_schema.properties` loosely (property access comes back as possibly
 // undefined under strict). These helpers give us a typed view for assertions
 // without altering the production source.
-type PropMap = Record<string, any>;
+interface SchemaProperty {
+  type?: string;
+  enum?: readonly unknown[];
+  items?: SchemaProperty;
+  additionalProperties?: SchemaProperty;
+  properties?: Record<string, SchemaProperty>;
+}
+
+type PropMap = Record<string, SchemaProperty>;
 
 function propsOf(toolName: string): PropMap {
   const tool = agentTools.find((t) => t.name === toolName)!;
-  return tool.input_schema.properties as PropMap;
+  return tool.input_schema.properties as unknown as PropMap;
 }
 
 function toolNamed(toolName: string) {
@@ -87,7 +95,7 @@ describe("agentTools", () => {
     });
 
     it("defines the budget enum", () => {
-      expect(props.constraints.properties.budget.enum).toEqual([
+      expect(props.constraints.properties!.budget.enum).toEqual([
         "low",
         "medium",
         "high",
@@ -95,7 +103,7 @@ describe("agentTools", () => {
     });
 
     it("defines the timeline enum", () => {
-      expect(props.constraints.properties.timeline.enum).toEqual([
+      expect(props.constraints.properties!.timeline.enum).toEqual([
         "aggressive",
         "moderate",
         "flexible",
@@ -104,7 +112,7 @@ describe("agentTools", () => {
 
     it("defines the talentAvailability enum", () => {
       expect(
-        props.constraints.properties.talentAvailability.enum
+        props.constraints.properties!.talentAvailability.enum
       ).toEqual(["scarce", "moderate", "abundant"]);
     });
 

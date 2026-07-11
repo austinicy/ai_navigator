@@ -8,6 +8,7 @@ import { DimensionBar } from "./DimensionBar";
 import { AIReadinessScore } from "./AIReadinessScore";
 import { EvidenceList } from "./EvidenceList";
 import { StatusBar } from "./StatusBar";
+import { AssessmentProgress } from "./AssessmentProgress";
 
 interface ScorecardPanelProps {
   delta: AssessmentDelta | null;
@@ -36,6 +37,8 @@ export function ScorecardPanel({ delta, documentCount }: ScorecardPanelProps) {
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <AssessmentRadarChart delta={delta} />
+
+        <AssessmentProgress delta={delta} config={config} />
 
         <div>
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">

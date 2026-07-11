@@ -1,6 +1,10 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import {
+  getSpeechRecognitionConstructor,
+  useSpeechRecognitionSupport,
+} from "@/hooks/useSpeechRecognitionSupport";
 
 interface UseContinuousVoiceOptions {
   onTranscript: (text: string) => void;
@@ -11,7 +15,7 @@ export function useContinuousVoice({ onTranscript, onAssistantSpeaking }: UseCon
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [interimTranscript, setInterimTranscript] = useState("");
-  const [isSupported, setIsSupported] = useState(false);
+  const isSupported = useSpeechRecognitionSupport();
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const shouldListenRef = useRef(false);
   const onTranscriptRef = useRef(onTranscript);
@@ -25,15 +29,8 @@ export function useContinuousVoice({ onTranscript, onAssistantSpeaking }: UseCon
   }, [onAssistantSpeaking]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const Ctor =
-      (window as unknown as { SpeechRecognition?: typeof SpeechRecognition }).SpeechRecognition ||
-      (window as unknown as { webkitSpeechRecognition?: typeof SpeechRecognition }).webkitSpeechRecognition;
-    if (!Ctor) {
-      setIsSupported(false);
-      return;
-    }
-    setIsSupported(true);
+    const Ctor = getSpeechRecognitionConstructor();
+    if (!Ctor) return;
     const recognition = new Ctor();
     recognition.continuous = true;
     recognition.interimResults = true;
@@ -131,6 +128,15 @@ export function useContinuousVoice({ onTranscript, onAssistantSpeaking }: UseCon
       };
       utterance.onerror = () => {
         setIsSpeaking(false);
+        if (wasListening) {
+          shouldListenRef.current = true;
+          setIsListening(true);
+          try {
+            recognitionRef.current?.start();
+          } catch {
+            /* ignore */
+          }
+        }
         resolve();
       };
       window.speechSynthesis.speak(utterance);

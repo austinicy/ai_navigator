@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { getThemeInitScript } from "@/lib/theme";
 
@@ -16,7 +17,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: getThemeInitScript() }} />
+        <Script id="theme-init" strategy="beforeInteractive">
+          {getThemeInitScript()}
+        </Script>
       </head>
       <body className={`${inter.className} antialiased min-h-screen bg-background text-foreground`}>
         {children}

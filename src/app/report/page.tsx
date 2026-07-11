@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OverviewTab } from "@/components/report/OverviewTab";
 import { DeepDiveTab } from "@/components/report/DeepDiveTab";
@@ -9,65 +10,22 @@ import { ExportTab } from "@/components/report/ExportTab";
 import { SiteShell } from "@/components/layout/SiteShell";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { useAssessment } from "@/hooks/useAssessment";
-import { AssessmentDelta } from "@/lib/assessment/types";
+import { getDemoDelta } from "@/lib/demo/demo-delta";
+import { getDemoRoadmap } from "@/lib/demo/demo-data";
 
-export default function ReportPage() {
+function ReportPageContent() {
   const { delta: savedDelta, orgName: savedOrgName, industry: savedIndustry } = useAssessment();
-  const [delta, setDelta] = useState<AssessmentDelta | null>(null);
+  const searchParams = useSearchParams();
+  const isDemo = searchParams.get("demo") === "true";
+  const demoDelta = useMemo(() => getDemoDelta(), []);
+  // Demo reports are read-only and never touch the active assessment session.
+  const delta = isDemo ? demoDelta : savedDelta ?? demoDelta;
 
-  // Prefer saved session state; fall back to demo data only if none exists.
-  // Guard against a race: on mount savedDelta is null (the hook's localStorage
-  // read hasn't run yet), so a demo fetch fires. If saved state then loads
-  // before that fetch resolves, the stale demo response would overwrite the
-  // saved delta. The cancelled flag + savedDelta re-check drop stale results.
-  useEffect(() => {
-    if (savedDelta) {
-      setDelta(savedDelta);
-      return;
-    }
-    let cancelled = false;
-    fetch("/api/demo")
-      .then((res) => res.json())
-      .then((data) => {
-        if (cancelled || savedDelta) return;
-        const demoDelta: AssessmentDelta = {
-          dimensions: data.dimensions,
-          aiReadiness: data.aiReadiness,
-          signalsCollected: Object.values(data.dimensions as Record<string, { evidence: unknown[] }>).reduce(
-            (sum: number, d: { evidence: unknown[] }) => sum + d.evidence.length,
-            0
-          ),
-          dimensionsAssessed: 7,
-          dimensionsRemaining: 0,
-          nextFocus: "",
-          orgProfile: data.orgProfile,
-          frameworkVersion: data.frameworkVersion,
-          benchmark: { overall: null, byDimension: {} },
-        };
-        setDelta(demoDelta);
-      })
-      .catch(console.error);
-    return () => {
-      cancelled = true;
-    };
-  }, [savedDelta]);
-
-  const effectiveOrgName = savedOrgName || "Acme Corporation";
-  const effectiveIndustry = savedIndustry || "Manufacturing";
-
-  if (!delta) {
-    return (
-      <SiteShell footer={false} maxWidth="max-w-6xl">
-        <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center">
-          <p className="text-muted-foreground">Loading report...</p>
-        </div>
-      </SiteShell>
-    );
-  }
+  const effectiveOrgName = delta?.orgProfile.name || savedOrgName || "Acme Corporation";
+  const effectiveIndustry = delta?.orgProfile.industry || savedIndustry || "Manufacturing";
 
   return (
-    <ErrorBoundary>
-      <SiteShell maxWidth="max-w-6xl">
+    <SiteShell maxWidth="max-w-6xl">
         <div className="py-8">
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-foreground">Transformation report</h1>
@@ -91,6 +49,7 @@ export default function ReportPage() {
                 delta={delta}
                 orgName={effectiveOrgName}
                 industry={effectiveIndustry}
+                initialRoadmap={isDemo ? getDemoRoadmap() : undefined}
               />
             </TabsContent>
             <TabsContent value="export" className="mt-6">
@@ -98,7 +57,16 @@ export default function ReportPage() {
             </TabsContent>
           </Tabs>
         </div>
-      </SiteShell>
+    </SiteShell>
+  );
+}
+
+export default function ReportPage() {
+  return (
+    <ErrorBoundary>
+      <Suspense fallback={<div className="h-screen flex items-center justify-center text-muted-foreground">Loading report...</div>}>
+        <ReportPageContent />
+      </Suspense>
     </ErrorBoundary>
   );
 }

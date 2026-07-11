@@ -4,21 +4,24 @@
 import { useEffect, useRef } from "react";
 import { Mic, Circle, Keyboard } from "lucide-react";
 import { ChatMessage } from "./ChatMessage";
-import { useChat } from "@/hooks/useChat";
 import { useContinuousVoice } from "@/hooks/useContinuousVoice";
+import type { ChatMessage as ChatMessageType } from "@/lib/assessment/types";
 
 interface VoiceOverlayProps {
   onExit: () => void;
+  messages: ChatMessageType[];
+  sendMessage: (content: string) => Promise<void>;
+  isLoading: boolean;
 }
 
-export function VoiceOverlay({ onExit }: VoiceOverlayProps) {
-  const { messages, sendMessage, isLoading } = useChat();
+export function VoiceOverlay({ onExit, messages, sendMessage, isLoading }: VoiceOverlayProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { isListening, isSpeaking, interimTranscript, start, stop, speak, isSupported } =
     useContinuousVoice({
-      onTranscript: (text) => sendMessage(text),
-      onAssistantSpeaking: () => isSpeaking,
+      onTranscript: (text) => {
+        if (!isLoading) void sendMessage(text);
+      },
     });
 
   // Start listening on mount; stop on unmount.

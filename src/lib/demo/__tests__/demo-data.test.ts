@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getDemoSession } from "../demo-data";
+import { getDemoRoadmap, getDemoSession } from "../demo-data";
 import { loadFramework } from "../../framework/config";
 import type {
   AssessmentSession,
@@ -182,5 +182,18 @@ describe("getDemoSession", () => {
     // itself won't compile. We also assert at runtime that the core shape holds.
     const _typed: Partial<AssessmentSession> = session;
     expect(_typed).toBeDefined();
+  });
+});
+
+describe("getDemoRoadmap", () => {
+  it("returns a pre-generated execution plan for the demo report", () => {
+    const roadmap = getDemoRoadmap();
+
+    expect(roadmap.orgName).toBe("Acme Corporation");
+    expect(roadmap.industry).toBe("Manufacturing");
+    expect(roadmap.phases.length).toBeGreaterThanOrEqual(3);
+    expect(roadmap.phases[0].actions.length).toBeGreaterThan(0);
+    expect(roadmap.quickWins.length).toBeGreaterThan(0);
+    expect(roadmap.criticalGaps.length).toBeGreaterThan(0);
   });
 });

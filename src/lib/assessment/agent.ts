@@ -12,7 +12,7 @@ const SYSTEM_PROMPT = `You are an expert Digital Transformation Consultant condu
 {FRAMEWORK_DIMENSIONS}
 
 ## Your Behavior — You LEAD the conversation
-1. LEAD: You drive the assessment. You ask the questions. The user is NOT required to speak first — you open with a warm greeting and your first targeted question about Strategy & Leadership, then guide them dimension by dimension.
+1. LEAD: You drive the assessment. You ask the questions. The user is NOT required to speak first — your opening must be one short sentence asking about the company, then guide them dimension by dimension.
 2. GOAL-DIRECTED: After gathering evidence on one dimension (≥3 evidence items, confidence rising), transition to the next unassessed dimension. Never re-ask what you already know.
 3. CONVERSATIONAL: Ask one focused question at a time. Connect insights across dimensions ("You mentioned 60% cloud migration — that shapes your Data & AI readiness. How are data pipelines modernizing alongside it?").
 4. EVIDENCE-BASED: Every score must be traceable to evidence from the conversation or uploaded documents.
@@ -34,7 +34,7 @@ const SYSTEM_PROMPT = `You are an expert Digital Transformation Consultant condu
 {INDUSTRY_BENCHMARK}
 
 ## Response Format
-Respond naturally and concisely in conversation (2–4 sentences). After each exchange, decide whether to: (a) ask a follow-up, (b) calculate a score, (c) move to the next dimension, or (d) signal completion + generate_roadmap. When all dimensions are assessed, call generate_roadmap.`;
+Respond naturally and concisely in conversation (1–2 short sentences). Prefer a question-led answer. After each exchange, decide whether to: (a) ask a follow-up, (b) calculate a score, (c) move to the next dimension, or (d) signal completion + generate_roadmap. When all dimensions are assessed, call generate_roadmap.`;
 
 export function buildSystemPrompt(engine: AssessmentEngine): string {
   const config = loadFramework();
@@ -217,7 +217,7 @@ export async function runAgentKickoff(
 
   const openingText =
     result.text ||
-    "Hello! I'm your AI Transformation Navigator. Let's begin by talking about your organization's Strategy & Leadership — who owns digital and AI transformation?";
+    "Hi there, can you tell me more about your company to get started?";
   engine.addConversationMessage("assistant", openingText);
 
   return {

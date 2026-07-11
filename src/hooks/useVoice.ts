@@ -1,18 +1,20 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import {
+  getSpeechRecognitionConstructor,
+  useSpeechRecognitionSupport,
+} from "@/hooks/useSpeechRecognitionSupport";
 
 export function useVoice() {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const isSupported = useSpeechRecognitionSupport();
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && "SpeechRecognition" in window) {
-      recognitionRef.current = new (window as unknown as { SpeechRecognition: typeof SpeechRecognition }).SpeechRecognition();
-    } else if (typeof window !== "undefined" && "webkitSpeechRecognition" in window) {
-      recognitionRef.current = new (window as unknown as { webkitSpeechRecognition: typeof SpeechRecognition }).webkitSpeechRecognition();
-    }
+    const Ctor = getSpeechRecognitionConstructor();
+    if (Ctor) recognitionRef.current = new Ctor();
     if (recognitionRef.current) {
       recognitionRef.current.continuous = false;
       recognitionRef.current.interimResults = false;
@@ -81,6 +83,6 @@ export function useVoice() {
     startListening,
     speak,
     stopSpeaking,
-    isSupported: !!recognitionRef.current,
+    isSupported,
   };
 }

@@ -100,7 +100,7 @@ export function useChat() {
       const fallback: ChatMessage = {
         id: `assistant-${Date.now()}`,
         role: "assistant",
-        content: "Hello! I'm your AI Transformation Navigator. Let's start with Strategy & Leadership — who sponsors digital and AI transformation in your organization?",
+        content: "Hi there, can you tell me more about your company to get started?",
         timestamp: Date.now(),
       };
       setMessages((prev) => [...prev, fallback]);

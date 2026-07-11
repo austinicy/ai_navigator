@@ -1,52 +1,61 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { AssessmentDelta } from "@/lib/assessment/types";
 
 const STORAGE_KEY = "ai-navigator-assessment";
 
-export function useAssessment() {
-  const [delta, setDelta] = useState<AssessmentDelta | null>(null);
-  const [orgName, setOrgName] = useState("");
-  const [industry, setIndustry] = useState("");
+interface StoredAssessment {
+  delta: AssessmentDelta | null;
+  orgName: string;
+  industry: string;
+}
 
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        setDelta(parsed.delta);
-        setOrgName(parsed.orgName);
-        setIndustry(parsed.industry);
-      } catch {
-        // Ignore parse errors
-      }
-    }
-  }, []);
+const emptyAssessment: StoredAssessment = {
+  delta: null,
+  orgName: "",
+  industry: "",
+};
+
+function readStoredAssessment(): StoredAssessment {
+  if (typeof window === "undefined") return emptyAssessment;
+
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    if (!stored) return emptyAssessment;
+    const parsed = JSON.parse(stored) as Partial<StoredAssessment>;
+    return {
+      delta: parsed.delta ?? null,
+      orgName: parsed.orgName ?? "",
+      industry: parsed.industry ?? "",
+    };
+  } catch {
+    return emptyAssessment;
+  }
+}
+
+export function useAssessment() {
+  const [assessment, setAssessment] = useState<StoredAssessment>(readStoredAssessment);
 
   const saveAssessment = useCallback(
     (newDelta: AssessmentDelta | null, name?: string, ind?: string) => {
-      setDelta(newDelta);
-      if (name) setOrgName(name);
-      if (ind) setIndustry(ind);
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
+      setAssessment((current) => {
+        const next = {
           delta: newDelta,
-          orgName: name ?? orgName,
-          industry: ind ?? industry,
-        })
-      );
+          orgName: name ?? current.orgName,
+          industry: ind ?? current.industry,
+        };
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        return next;
+      });
     },
-    [orgName, industry]
+    []
   );
 
   const clearAssessment = useCallback(() => {
-    setDelta(null);
-    setOrgName("");
-    setIndustry("");
-    localStorage.removeItem(STORAGE_KEY);
+    setAssessment(emptyAssessment);
+    window.localStorage.removeItem(STORAGE_KEY);
   }, []);
 
-  return { delta, orgName, industry, saveAssessment, clearAssessment };
+  return { ...assessment, saveAssessment, clearAssessment };
 }

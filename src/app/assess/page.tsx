@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, Suspense } from "react";
+import { useState, useCallback, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { ChatPanel } from "@/components/assess/ChatPanel";
 import { ScorecardPanel } from "@/components/assess/ScorecardPanel";
@@ -8,46 +8,24 @@ import { SiteShell } from "@/components/layout/SiteShell";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { useAssessment } from "@/hooks/useAssessment";
 import { AssessmentDelta } from "@/lib/assessment/types";
+import { getDemoDelta } from "@/lib/demo/demo-delta";
 
 function AssessPageContent() {
   const searchParams = useSearchParams();
   const isDemo = searchParams.get("demo") === "true";
   const [delta, setDelta] = useState<AssessmentDelta | null>(null);
-  const [documentCount, setDocumentCount] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const { saveAssessment } = useAssessment();
-
-  useEffect(() => {
-    if (isDemo) {
-      fetch("/api/demo")
-        .then((res) => res.json())
-        .then((data) => {
-          // Build a delta from demo data
-          const demoDelta: AssessmentDelta = {
-            dimensions: data.dimensions,
-            aiReadiness: data.aiReadiness,
-            signalsCollected: Object.values(data.dimensions as Record<string, { evidence: unknown[] }>).reduce(
-              (sum: number, d: { evidence: unknown[] }) => sum + d.evidence.length,
-              0
-            ),
-            dimensionsAssessed: 7,
-            dimensionsRemaining: 0,
-            nextFocus: "",
-            orgProfile: data.orgProfile,
-            frameworkVersion: data.frameworkVersion,
-            benchmark: { overall: null, byDimension: {} },
-          };
-          setDelta(demoDelta);
-          setIsComplete(true);
-        })
-        .catch(console.error);
-    }
-  }, [isDemo]);
+  const demoDelta = useMemo(() => (isDemo ? getDemoDelta() : null), [isDemo]);
+  const activeDelta = demoDelta ?? delta;
+  const assessmentComplete = isDemo || isComplete;
 
   // Persist assessment state so the report page can read it
   useEffect(() => {
-    if (delta) saveAssessment(delta);
-  }, [delta, saveAssessment]);
+    if (delta && !isDemo) {
+      saveAssessment(delta, delta.orgProfile.name, delta.orgProfile.industry);
+    }
+  }, [delta, isDemo, saveAssessment]);
 
   const handleAssessmentUpdate = useCallback((newDelta: AssessmentDelta | null) => {
     setDelta(newDelta);
@@ -65,17 +43,18 @@ function AssessPageContent() {
             <ChatPanel
               onAssessmentUpdate={handleAssessmentUpdate}
               onComplete={handleComplete}
+              autoStart={!isDemo}
             />
           </div>
           <div className="w-1/2">
-            <ScorecardPanel delta={delta} documentCount={documentCount} />
+            <ScorecardPanel delta={activeDelta} documentCount={0} />
           </div>
         </div>
 
-        {isComplete && delta && (
+        {assessmentComplete && activeDelta && (
           <div className="border-t border-border px-4 py-3 flex justify-center shrink-0">
             <a
-              href="/report"
+              href={isDemo ? "/report?demo=true" : "/report"}
               className="gradient-primary text-white font-semibold px-8 py-2 rounded-lg hover:opacity-90 transition-opacity inline-block"
             >
               View Full Report & Roadmap →

@@ -202,7 +202,7 @@ export class AssessmentEngine {
   } {
     return {
       seedMessage:
-        "(Assessment start — greet the organization and ask your first targeted question about Strategy & Leadership. Do not wait for the user to speak first.)",
+        '(Assessment start — respond with one short sentence: "Hi there, can you tell me more about your company to get started?")',
       orgProfile: this.session.orgProfile,
       frameworkVersion: this.config.version,
     };

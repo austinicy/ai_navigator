@@ -11,6 +11,7 @@ interface RoadmapTabProps {
   delta: AssessmentDelta;
   orgName: string;
   industry: string;
+  initialRoadmap?: Roadmap;
 }
 
 const effortColors: Record<string, string> = {
@@ -49,12 +50,16 @@ function ActionCard({ action }: { action: RoadmapAction }) {
   );
 }
 
-export function RoadmapTab({ delta, orgName, industry }: RoadmapTabProps) {
-  const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export function RoadmapTab({ delta, orgName, industry, initialRoadmap }: RoadmapTabProps) {
+  const [roadmap, setRoadmap] = useState<Roadmap | null>(initialRoadmap ?? null);
+  const [isLoading, setIsLoading] = useState(!initialRoadmap);
   const [activePhase, setActivePhase] = useState(0);
+  const effectiveRoadmap = initialRoadmap ?? roadmap;
+  const effectiveIsLoading = initialRoadmap ? false : isLoading;
 
   useEffect(() => {
+    if (initialRoadmap) return;
+
     const sessionData = {
       // Construct minimal session for roadmap API
       dimensions: delta.dimensions,
@@ -86,9 +91,9 @@ export function RoadmapTab({ delta, orgName, industry }: RoadmapTabProps) {
         setIsLoading(false);
       })
       .catch(() => setIsLoading(false));
-  }, [delta, orgName, industry]);
+  }, [delta, orgName, industry, initialRoadmap]);
 
-  if (isLoading) {
+  if (effectiveIsLoading) {
     return (
       <div className="text-center py-12">
         <div className="flex justify-center gap-1 mb-4">
@@ -101,7 +106,7 @@ export function RoadmapTab({ delta, orgName, industry }: RoadmapTabProps) {
     );
   }
 
-  if (!roadmap || roadmap.phases.length === 0) {
+  if (!effectiveRoadmap || effectiveRoadmap.phases.length === 0) {
     return (
       <div className="text-center py-12">
         <p className="text-muted-foreground">Unable to generate roadmap. Please try again.</p>
@@ -111,11 +116,11 @@ export function RoadmapTab({ delta, orgName, industry }: RoadmapTabProps) {
 
   return (
     <div className="space-y-6">
-      <PhaseTimeline phases={roadmap.phases} activePhase={activePhase} />
+      <PhaseTimeline phases={effectiveRoadmap.phases} activePhase={activePhase} />
 
       {/* Phase selector buttons */}
       <div className="flex gap-2">
-        {roadmap.phases.map((phase, i) => (
+        {effectiveRoadmap.phases.map((phase, i) => (
           <button
             key={phase.id}
             onClick={() => setActivePhase(i)}
@@ -131,13 +136,13 @@ export function RoadmapTab({ delta, orgName, industry }: RoadmapTabProps) {
       </div>
 
       {/* Active phase actions */}
-      {roadmap.phases[activePhase] && (
+      {effectiveRoadmap.phases[activePhase] && (
         <div>
           <p className="text-sm text-muted-foreground mb-3">
-            {roadmap.phases[activePhase].description}
+            {effectiveRoadmap.phases[activePhase].description}
           </p>
           <div className="grid gap-3">
-            {roadmap.phases[activePhase].actions.map((action) => (
+            {effectiveRoadmap.phases[activePhase].actions.map((action) => (
               <ActionCard key={action.id} action={action} />
             ))}
           </div>
@@ -145,14 +150,14 @@ export function RoadmapTab({ delta, orgName, industry }: RoadmapTabProps) {
       )}
 
       {/* Quick wins */}
-      {roadmap.quickWins.length > 0 && (
+      {effectiveRoadmap.quickWins.length > 0 && (
         <GradientCard>
           <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-1.5">
             <Zap className="size-4 text-accent" />
             Quick Wins
           </h3>
           <div className="grid md:grid-cols-2 gap-2">
-            {roadmap.quickWins.map((qw) => (
+            {effectiveRoadmap.quickWins.map((qw) => (
               <div key={qw.id} className="border border-emerald-500/20 rounded-lg p-3 bg-emerald-500/5">
                 <h4 className="text-xs font-semibold text-foreground">{qw.title}</h4>
                 <p className="text-[10px] text-muted-foreground mt-0.5">{qw.description}</p>
@@ -163,14 +168,14 @@ export function RoadmapTab({ delta, orgName, industry }: RoadmapTabProps) {
       )}
 
       {/* Critical gaps */}
-      {roadmap.criticalGaps.length > 0 && (
+      {effectiveRoadmap.criticalGaps.length > 0 && (
         <div>
           <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1.5">
             <AlertCircle className="size-4 text-red-400" />
             Critical Gaps Addressed
           </h3>
           <ul className="space-y-1">
-            {roadmap.criticalGaps.map((gap, i) => (
+            {effectiveRoadmap.criticalGaps.map((gap, i) => (
               <li key={i} className="text-xs text-red-400/80 flex items-start gap-1.5">
                 <span className="shrink-0">•</span>
                 <span>{gap}</span>

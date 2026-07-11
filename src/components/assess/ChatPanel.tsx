@@ -11,21 +11,23 @@ import { useVoice } from "@/hooks/useVoice";
 interface ChatPanelProps {
   onAssessmentUpdate: (delta: ReturnType<typeof useChat>["currentDelta"]) => void;
   onComplete: () => void;
+  autoStart?: boolean;
 }
 
-export function ChatPanel({ onAssessmentUpdate, onComplete }: ChatPanelProps) {
+export function ChatPanel({ onAssessmentUpdate, onComplete, autoStart = true }: ChatPanelProps) {
   const { messages, isLoading, currentDelta, isComplete, sendMessage, uploadDocument, startAssessment } = useChat();
-  const { speak, isSupported: voiceSupported } = useVoice();
+  const { isSupported: voiceSupported } = useVoice();
   const [voiceMode, setVoiceMode] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const kickedOffRef = useRef(false);
 
   // Agent-led kickoff: fire once on mount so the agent greets + asks first.
   useEffect(() => {
+    if (!autoStart) return;
     if (kickedOffRef.current) return;
     kickedOffRef.current = true;
     startAssessment();
-  }, [startAssessment]);
+  }, [autoStart, startAssessment]);
 
   useEffect(() => {
     if (currentDelta) onAssessmentUpdate(currentDelta);
@@ -34,13 +36,6 @@ export function ChatPanel({ onAssessmentUpdate, onComplete }: ChatPanelProps) {
   useEffect(() => {
     if (isComplete) onComplete();
   }, [isComplete, onComplete]);
-
-  // Auto-speak assistant messages in TEXT mode (voice mode handles its own TTS).
-  useEffect(() => {
-    if (voiceMode) return;
-    const lastMsg = messages[messages.length - 1];
-    if (lastMsg?.role === "assistant") speak(lastMsg.content);
-  }, [messages, speak, voiceMode]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -56,7 +51,14 @@ export function ChatPanel({ onAssessmentUpdate, onComplete }: ChatPanelProps) {
   };
 
   if (voiceMode) {
-    return <VoiceOverlay onExit={() => setVoiceMode(false)} />;
+    return (
+      <VoiceOverlay
+        messages={messages}
+        sendMessage={sendMessage}
+        isLoading={isLoading}
+        onExit={() => setVoiceMode(false)}
+      />
+    );
   }
 
   return (

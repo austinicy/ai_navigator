@@ -2,9 +2,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Mic, Circle, Keyboard } from "lucide-react";
+import { Mic, MicOff, Keyboard, LoaderCircle } from "lucide-react";
 import { ChatMessage } from "./ChatMessage";
-import { useContinuousVoice } from "@/hooks/useContinuousVoice";
+import { useAgoraVoice } from "@/hooks/useAgoraVoice";
 import type { ChatMessage as ChatMessageType } from "@/lib/assessment/types";
 
 interface VoiceOverlayProps {
@@ -16,50 +16,26 @@ interface VoiceOverlayProps {
 
 export function VoiceOverlay({ onExit, messages, sendMessage, isLoading }: VoiceOverlayProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  const { isListening, isSpeaking, interimTranscript, start, stop, speak, isSupported } =
-    useContinuousVoice({
-      onTranscript: (text) => {
-        if (!isLoading) void sendMessage(text);
-      },
-    });
+  void sendMessage;
+  void isLoading;
+  const { status, error, isMuted, transcripts, start, stop, toggleMute } =
+    useAgoraVoice();
 
   // Start listening on mount; stop on unmount.
   useEffect(() => {
-    start();
-    return () => stop();
+    // Defer startup by one task so React Strict Mode's development-only
+    // setup/cleanup probe cannot create two RTC sessions.
+    const timer = window.setTimeout(() => void start(), 0);
+    return () => {
+      window.clearTimeout(timer);
+      void stop();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Speak each new assistant message aloud (TTS), then resume listening.
-  const lastSpokenRef = useRef<string | null>(null);
-  useEffect(() => {
-    const last = messages[messages.length - 1];
-    if (last?.role === "assistant" && last.id !== lastSpokenRef.current) {
-      lastSpokenRef.current = last.id;
-      speak(last.content);
-    }
-  }, [messages, speak]);
-
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, interimTranscript]);
-
-  if (!isSupported) {
-    return (
-      <div className="flex flex-col h-full items-center justify-center p-6 text-center">
-        <p className="text-sm text-muted-foreground mb-4">
-          Voice input isn&apos;t supported in this browser. Use the text input instead.
-        </p>
-        <button
-          onClick={onExit}
-          className="gradient-primary text-white px-6 py-2 rounded-lg text-sm font-medium"
-        >
-          Switch to text input
-        </button>
-      </div>
-    );
-  }
+  }, [messages, transcripts]);
 
   return (
     <div className="flex flex-col h-full">
@@ -67,7 +43,15 @@ export function VoiceOverlay({ onExit, messages, sendMessage, isLoading }: Voice
         <div>
           <h2 className="font-semibold text-foreground">Voice Mode</h2>
           <p className="text-xs text-muted-foreground">
-            {isSpeaking ? "Speaking…" : isListening ? "Listening — just talk" : "Tap the mic to resume"}
+            {status === "connecting"
+              ? "Connecting to Agora…"
+              : status === "connected"
+                ? isMuted
+                  ? "Microphone muted"
+                  : "Agora is listening — just talk"
+                : status === "error"
+                  ? "Voice connection failed"
+                  : "Voice session ended"}
           </p>
         </div>
         <button
@@ -82,44 +66,49 @@ export function VoiceOverlay({ onExit, messages, sendMessage, isLoading }: Voice
         {messages.map((msg) => (
           <ChatMessage key={msg.id} message={msg} />
         ))}
-        {isLoading && (
-          <div className="flex justify-start mb-4">
-            <div className="bg-muted/50 border border-border rounded-xl px-4 py-3">
-              <div className="flex gap-1">
-                <span className="w-2 h-2 bg-primary rounded-full animate-bounce" />
-                <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:0.1s]" />
-                <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:0.2s]" />
-              </div>
+        {transcripts.map((transcript) => (
+          <div
+            key={transcript.id}
+            className={`flex mb-4 ${transcript.role === "user" ? "justify-end" : "justify-start"}`}
+          >
+            <div className="max-w-[85%] bg-muted/40 border border-border rounded-xl px-4 py-2 text-sm">
+              <p className={!transcript.final ? "text-muted-foreground italic" : undefined}>
+                {transcript.text}{!transcript.final && "…"}
+              </p>
             </div>
           </div>
-        )}
-        {interimTranscript && (
-          <div className="flex justify-end mb-4">
-            <div className="bg-muted/30 border border-border rounded-xl px-4 py-2 text-sm text-muted-foreground italic">
-              {interimTranscript}…
-            </div>
+        ))}
+        {error && (
+          <div className="mx-auto max-w-md rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-400">
+            {error}
           </div>
         )}
       </div>
 
       <div className="border-t border-border p-6 flex flex-col items-center gap-3">
         <button
-          onClick={isListening ? stop : start}
+          onClick={() => {
+            if (status === "error" || status === "idle") void start();
+            else void toggleMute();
+          }}
+          disabled={status === "connecting"}
           className={`w-20 h-20 rounded-full flex items-center justify-center transition-all ${
-            isListening
-              ? "bg-red-500/20 border-2 border-red-500 animate-pulse"
+            status === "connected" && !isMuted
+              ? "bg-red-500/20 border-2 border-red-500"
               : "gradient-primary text-white border-2 border-transparent"
           }`}
-          title={isListening ? "Stop listening" : "Start listening"}
+          title={isMuted ? "Unmute microphone" : "Mute microphone"}
         >
-          {isListening ? (
-            <Circle className="size-8 text-red-500" />
+          {status === "connecting" ? (
+            <LoaderCircle className="size-8 animate-spin" />
+          ) : isMuted ? (
+            <MicOff className="size-8" />
           ) : (
             <Mic className="size-8" />
           )}
         </button>
         <p className="text-xs text-muted-foreground">
-          {isListening ? "Listening — speak naturally" : "Mic off"}
+          {status === "connected" ? (isMuted ? "Tap to unmute" : "Tap to mute") : "Tap to reconnect"}
         </p>
       </div>
     </div>

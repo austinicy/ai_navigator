@@ -1,51 +1,31 @@
-// src/components/methodology/WhyItMatters.tsx
-import { Clock, FileSearch, GitBranch, Layers } from "lucide-react";
+import { ArrowRight, Clock3, Fingerprint, GitBranch, Radar, Sparkles, Waves } from "lucide-react";
 import { Reveal } from "@/components/landing/Reveal";
 
-const CARDS = [
-  { icon: Clock, title: "Cuts months to minutes", body: "A conversational assessment replaces weeks of surveys with a guided 15-minute dialogue — and a defensible scorecard immediately." },
-  { icon: FileSearch, title: "Evidence-traceable scores", body: "Every score links back to what you said or uploaded. No black-box ratings — executives can audit each level." },
-  { icon: GitBranch, title: "Sequenced, not generic", body: "The dependency map respects reality: data before AI, cloud before data migration, governance before scaling." },
-  { icon: Layers, title: "Two scores, one picture", body: "Digital Maturity (where you are) + AI Readiness (whether you can capitalize on AI) — current state and capacity to execute." },
+const OUTCOMES = [
+  { icon: Clock3, metric: "15 min", label: "to a first maturity baseline", detail: "Replace weeks of survey coordination with one guided conversation." },
+  { icon: Fingerprint, metric: "100%", label: "evidence traceability", detail: "Every score points back to a statement, document, or observed signal." },
+  { icon: GitBranch, metric: "30", label: "sequenced capabilities", detail: "Dependencies turn a wish list into an executable transformation path." },
+  { icon: Radar, metric: "2×", label: "strategic perspective", detail: "See digital maturity and AI readiness together—not as separate programs." },
 ];
 
-const UNIQUE = [
-  "Unified digital + AI assessment — most frameworks cover one or the other.",
-  "Configurable, versioned framework — JSON-driven, evolves without code changes.",
-  "Conversational, not checkbox — closer to a senior consultant than a survey.",
-  "Live scorecard — builds in real time as evidence accumulates.",
-  "Defensible provenance — every dimension names the established models it aligns to.",
+const DIFFERENTIATORS = [
+  { icon: Waves, title: "Conversational intelligence", body: "The system probes, clarifies, and adapts like a consultant instead of collecting static form answers." },
+  { icon: Fingerprint, title: "Defensible by design", body: "Confidence and provenance stay attached to every recommendation, so leaders can challenge the result constructively." },
+  { icon: GitBranch, title: "Dependency-aware action", body: "The roadmap recognizes that governance, data, talent, and platforms must mature in the right sequence." },
+  { icon: Sparkles, title: "Digital + AI, unified", body: "One versioned model connects today's operating maturity with tomorrow's ability to scale responsible AI." },
 ];
 
 export function WhyItMatters() {
-  return (
-    <section className="py-16">
-      <Reveal className="mb-8 max-w-2xl">
-        <h2 className="text-2xl font-bold text-foreground md:text-3xl">Why this drives success</h2>
-      </Reveal>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {CARDS.map((card, i) => (
-          <Reveal key={card.title} delay={i * 0.08}>
-            <div className="h-full rounded-xl border border-border bg-card p-5">
-              <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <card.icon className="size-5" />
-              </div>
-              <h3 className="mt-3 text-sm font-semibold text-foreground">{card.title}</h3>
-              <p className="mt-1 text-xs text-muted-foreground">{card.body}</p>
-            </div>
-          </Reveal>
-        ))}
-      </div>
-      <Reveal className="mt-10 rounded-2xl border border-border bg-card/50 p-6">
-        <h3 className="text-lg font-semibold text-foreground">What makes it unique</h3>
-        <ul className="mt-3 grid gap-2 md:grid-cols-2">
-          {UNIQUE.map((u) => (
-            <li key={u} className="flex items-start gap-2 text-sm text-muted-foreground">
-              <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-accent" /> {u}
-            </li>
-          ))}
-        </ul>
-      </Reveal>
-    </section>
-  );
+  return <section className="py-20">
+    <Reveal className="mx-auto max-w-3xl text-center"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Designed for momentum</span><h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-5xl">Why this drives success</h2><p className="mt-4 text-muted-foreground">A stronger assessment does more than describe the present. It creates shared conviction about what to do next.</p></Reveal>
+    <div className="mt-10 grid overflow-hidden rounded-2xl border border-border bg-card md:grid-cols-2 lg:grid-cols-4">
+      {OUTCOMES.map((item, index) => <Reveal key={item.label} delay={index * 0.06} className="border-b border-border p-6 last:border-0 md:[&:nth-child(odd)]:border-r lg:border-b-0 lg:border-r">
+        <item.icon className="size-5 text-primary" /><div className="mt-6 text-4xl font-semibold tracking-tight text-foreground">{item.metric}</div><div className="mt-1 text-sm font-semibold text-primary">{item.label}</div><p className="mt-3 text-xs leading-5 text-muted-foreground">{item.detail}</p>
+      </Reveal>)}
+    </div>
+    <div className="mt-16 grid items-start gap-10 lg:grid-cols-[.75fr_1.25fr]">
+      <Reveal className="lg:sticky lg:top-28"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Built differently</span><h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">What makes it unique</h2><p className="mt-4 text-sm leading-6 text-muted-foreground">Not another benchmark PDF. A living decision system that connects evidence to confidence, scores to dependencies, and priorities to action.</p><div className="mt-7 inline-flex items-center gap-2 text-sm font-semibold text-primary">Evidence → insight → sequence → momentum <ArrowRight className="size-4" /></div></Reveal>
+      <div className="grid gap-4 sm:grid-cols-2">{DIFFERENTIATORS.map((item, index) => <Reveal key={item.title} delay={index * 0.06}><div className="group relative min-h-[220px] overflow-hidden rounded-2xl border border-border bg-card p-6 transition hover:-translate-y-1 hover:border-primary/40"><div className="absolute -right-8 -top-8 size-28 rounded-full bg-primary/5 transition group-hover:scale-150" /><div className="relative flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary"><item.icon className="size-5" /></div><h3 className="relative mt-6 text-lg font-semibold text-foreground">{item.title}</h3><p className="relative mt-3 text-sm leading-6 text-muted-foreground">{item.body}</p></div></Reveal>)}</div>
+    </div>
+  </section>;
 }

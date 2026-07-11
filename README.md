@@ -7,7 +7,7 @@ Assess 7 dimensions of maturity across 30 criteria, get an AI Readiness sub-scor
 ## Screens
 
 1. **Landing** (`/`) — hero with two entry points: start a chat assessment, or upload docs first. Plus a "Load demo company" link.
-2. **Assessment** (`/assess`) — split view: conversational chat with the AI consultant (left) + live-updating scorecard with radar chart, dimension bars, AI Readiness breakdown, and evidence (right). Supports voice input (Web Speech API) and document upload (PDF/DOCX).
+2. **Assessment** (`/assess`) — split view: conversational chat with the AI consultant (left) + live-updating scorecard with radar chart, dimension bars, AI Readiness breakdown, and evidence (right). Supports Agora-powered real-time voice and document upload (PDF/DOCX).
 3. **Report** (`/report`) — four tabs: Overview (scores + critical gaps), Deep Dive (per-dimension evidence & criterion scores), Roadmap (3-phase plan with action cards + quick wins), Export (print-to-PDF).
 
 The `?demo=true` query param on `/assess` and `/report` loads a pre-populated **Acme Corporation** demo dataset so the full flow is viewable without completing an assessment.
@@ -39,6 +39,12 @@ The app supports three LLM providers, selected by the `LLM_PROVIDER` env var
 auto-selects by key presence in this order: anthropic → openai → deepseek.
 Any single provider key is enough to run the live chat, document signal
 extraction, and roadmap generation.
+
+Voice mode uses Agora Conversational AI instead of the browser Web Speech API.
+Set `AGORA_APP_ID`, `AGORA_APP_CERTIFICATE`, `AGORA_CUSTOMER_ID`, and
+`AGORA_CUSTOMER_SECRET` in `.env.local`. It uses Agora's built-in ASR and the
+configured `OPENAI_API_KEY` for `gpt-4o-mini-tts`; set `LLM_PROVIDER=deepseek`
+to keep DeepSeek as the voice agent's conversational model.
 
 Default models (override with `LLM_MODEL`):
 
@@ -74,6 +80,7 @@ npm run mcp        # starts the stdio MCP server
 - **Next.js 16** (App Router) + **React 19** + **TypeScript** (strict)
 - **Tailwind CSS v4** (dark neon theme) + **shadcn/ui** + **Recharts**
 - **Multi-provider LLM** — Anthropic (`@anthropic-ai/sdk`), OpenAI + DeepSeek (`openai` SDK) with tool use, selected by `LLM_PROVIDER` env var
+- **Agora Conversational AI** — RTC audio transport, built-in ASR, streamed transcripts, interruption handling, and OpenAI TTS
 - **pdf-parse** + **mammoth** for document extraction
 - **@modelcontextprotocol/sdk** for the MCP server
 - **vitest** for tests
@@ -85,6 +92,7 @@ src/
 ├── lib/
 │   ├── framework/      # versioned JSON config (7 dims, 30 criteria, 6 AI-readiness components) + loader
 │   ├── assessment/     # types, scoring, AssessmentEngine (session state), Claude agent + tools
+│   ├── agora/          # shared Agora voice-session and transcript types
 │   ├── document/       # PDF/DOCX parser + AI signal extractor
 │   ├── roadmap/        # roadmap types + Claude-based generator
 │   └── demo/           # pre-populated Acme Corporation demo session
@@ -92,13 +100,17 @@ src/
 │   ├── page.tsx        # landing
 │   ├── assess/         # assessment page (split view)
 │   ├── report/         # report page (4 tabs)
-│   └── api/            # chat, upload, assess, roadmap, demo routes
+│   └── api/            # chat, Agora session, upload, assess, roadmap, demo routes
 ├── components/         # landing/, assess/, report/, shared/, ui/
-├── hooks/              # useChat, useVoice, useAssessment
+├── hooks/              # chat, assessment, browser voice, and Agora RTC state
 └── mcp/                # MCP server + tools + cli
 ```
 
 **Data flow:** versioned JSON framework → `AssessmentEngine` (session state + weighted scoring) → Claude agent with 4 tools (`calculate_score`, `update_org_profile`, `estimate_benchmark`, `generate_roadmap`) → `AssessmentDelta` (incremental update) → API → React hooks → live scorecard. Session state is shared between the assess and report pages via `localStorage` (`useAssessment` hook), with the demo dataset as fallback.
+
+**Voice flow:** browser microphone → Agora RTC channel → Agora ASR → configured OpenAI-compatible LLM → OpenAI TTS → Agora remote audio track. Transcription events return over the RTC data stream and render in the voice overlay. App certificates, customer credentials, provider keys, and agent management remain server-side.
+
+For the complete current implementation, security model, API map, and known limitations, see [Technical Project Information](docs/project-information.md).
 
 ## Scripts
 
@@ -108,7 +120,7 @@ src/
 | `npm run build` | Production build |
 | `npm run start` | Run the production build |
 | `npm run lint` | ESLint |
-| `npm run test` | Run the vitest suite (116 tests) |
+| `npm run test` | Run the Vitest suite (currently 188 tests) |
 | `npm run test:watch` | Vitest in watch mode |
 | `npm run build:mcp` | Compile the MCP server to `dist/mcp` |
 | `npm run mcp` | Start the MCP server (stdio) |

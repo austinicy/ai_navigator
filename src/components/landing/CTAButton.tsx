@@ -4,7 +4,6 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import type { ReactNode } from "react";
 
 interface CTAButtonProps {
   href: string;

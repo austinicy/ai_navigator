@@ -2,12 +2,11 @@ import { DimensionAssessment } from "@/lib/assessment/types";
 import { getDimensionLevel } from "@/lib/assessment/scoring";
 
 interface DimensionBarProps {
-  dimensionId: string;
   name: string;
   assessment: DimensionAssessment | undefined;
 }
 
-export function DimensionBar({ dimensionId, name, assessment }: DimensionBarProps) {
+export function DimensionBar({ name, assessment }: DimensionBarProps) {
   const score = assessment?.score ?? 0;
   const confidence = assessment?.confidence ?? 0;
   const level = getDimensionLevel(score);

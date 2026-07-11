@@ -19,6 +19,34 @@ export interface DimensionAssessment {
   criterionConfidence: Record<string, number>; // criterionId → 0-1
 }
 
+export function normalizeGapList(input: unknown): string[] {
+  const values = Array.isArray(input) ? input : typeof input === "string" ? [input] : [];
+
+  // A previous score-update path spread a string as though it were an array.
+  // Repair browser-saved values such as ["D", "a", "t", "a", " ", "q", ...]
+  // at the boundary so historical reports remain readable.
+  const normalized: string[] = [];
+  let legacyCharacters = "";
+  const flushLegacyCharacters = () => {
+    const repaired = legacyCharacters.trim();
+    if (repaired) normalized.push(repaired);
+    legacyCharacters = "";
+  };
+
+  for (const gap of values) {
+    if (typeof gap !== "string") continue;
+    if (Array.from(gap).length === 1) {
+      legacyCharacters += gap;
+      continue;
+    }
+    flushLegacyCharacters();
+    const trimmed = gap.trim();
+    if (trimmed) normalized.push(trimmed);
+  }
+  flushLegacyCharacters();
+  return normalized;
+}
+
 export interface OrgProfile {
   name: string;
   industry: string;
@@ -71,6 +99,7 @@ export interface AssessmentDelta {
   orgProfile: OrgProfile;
   frameworkVersion: string;
   benchmark: { overall: number | null; byDimension: Record<string, number | null> };
+  documentCount?: number;
 }
 
 export interface AgentResponse {
@@ -112,6 +141,12 @@ export interface UploadedDocument {
   id: string;
   filename: string;
   extractedText: string;
-  signals: Evidence[];
+  signals: DocumentSignal[];
   uploadedAt: number;
+}
+
+/** Evidence extracted from an uploaded document, with an optional grounded score. */
+export interface DocumentSignal extends Evidence {
+  score?: number;
+  gap?: string;
 }

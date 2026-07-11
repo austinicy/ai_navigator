@@ -20,12 +20,6 @@ const effortColors: Record<string, string> = {
   high: "text-red-400 bg-red-400/10",
 };
 
-const impactColors: Record<string, string> = {
-  low: "text-muted-foreground",
-  medium: "text-amber-400",
-  high: "text-emerald-400",
-};
-
 function ActionCard({ action }: { action: RoadmapAction }) {
   return (
     <div className="border border-border rounded-lg p-4 hover:border-primary/30 transition-colors">

@@ -7,6 +7,7 @@ import type {
   IMicrophoneAudioTrack,
 } from "agora-rtc-sdk-ng";
 import type { AgoraTranscript, AgoraVoiceSession } from "@/lib/agora/types";
+import { getOrCreateActiveSessionId } from "@/lib/assessment/client-session";
 
 type Chunk = { index: number; total: number; content: string };
 
@@ -15,12 +16,14 @@ export function useAgoraVoice() {
   const [error, setError] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [transcripts, setTranscripts] = useState<AgoraTranscript[]>([]);
+  const [sharedContext, setSharedContext] = useState(false);
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const micRef = useRef<IMicrophoneAudioTrack | null>(null);
   const sessionRef = useRef<AgoraVoiceSession | null>(null);
   const chunksRef = useRef(new Map<string, Chunk[]>());
   const startInFlightRef = useRef(false);
   const operationRef = useRef(0);
+  const remoteAudioEnabledRef = useRef(true);
 
   const handlePayload = useCallback((payload: Uint8Array) => {
     try {
@@ -78,6 +81,7 @@ export function useAgoraVoice() {
         body: JSON.stringify({ agentId: session.agentId }),
       }).catch(() => undefined);
     }
+    setSharedContext(false);
     setStatus("idle");
   }, []);
 
@@ -112,10 +116,15 @@ export function useAgoraVoice() {
       permissionStream.getTracks().forEach((track) => track.stop());
       if (operation !== operationRef.current) return;
 
-      const response = await fetch("/api/agora/session", { method: "POST" });
+      const response = await fetch("/api/agora/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: getOrCreateActiveSessionId() }),
+      });
       const data = (await response.json()) as AgoraVoiceSession & { error?: string };
       if (!response.ok) throw new Error(data.error || "Unable to create Agora session");
       sessionRef.current = data;
+      setSharedContext(data.sharedContext);
       if (operation !== operationRef.current) {
         await stop();
         return;
@@ -129,7 +138,10 @@ export function useAgoraVoice() {
       clientRef.current = client;
       client.on("user-published", async (user, mediaType) => {
         await client.subscribe(user, mediaType);
-        if (mediaType === "audio") user.audioTrack?.play();
+        if (mediaType === "audio") {
+          user.audioTrack?.play();
+          user.audioTrack?.setVolume(remoteAudioEnabledRef.current ? 100 : 0);
+        }
       });
       client.on("stream-message", (_uid, payload) => handlePayload(payload));
       client.on("connection-state-change", (current) => {
@@ -172,7 +184,32 @@ export function useAgoraVoice() {
     setIsMuted(next);
   }, [isMuted]);
 
+  const setMuted = useCallback(async (muted: boolean) => {
+    const mic = micRef.current;
+    if (!mic) return;
+    await mic.setMuted(muted);
+    setIsMuted(muted);
+  }, []);
+
+  const setRemoteAudioEnabled = useCallback((enabled: boolean) => {
+    remoteAudioEnabledRef.current = enabled;
+    for (const user of clientRef.current?.remoteUsers ?? []) {
+      user.audioTrack?.setVolume(enabled ? 100 : 0);
+    }
+  }, []);
+
   useEffect(() => () => void stop(), [stop]);
 
-  return { status, error, isMuted, transcripts, start, stop, toggleMute };
+  return {
+    status,
+    error,
+    isMuted,
+    transcripts,
+    start,
+    stop,
+    toggleMute,
+    setMuted,
+    setRemoteAudioEnabled,
+    sharedContext,
+  };
 }

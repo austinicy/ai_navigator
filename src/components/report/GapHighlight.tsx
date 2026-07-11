@@ -1,4 +1,5 @@
 import { AlertCircle } from "lucide-react";
+import { normalizeGapList } from "@/lib/assessment/types";
 
 interface GapHighlightProps {
   dimensionName: string;
@@ -7,6 +8,8 @@ interface GapHighlightProps {
 }
 
 export function GapHighlight({ dimensionName, score, gaps }: GapHighlightProps) {
+  const normalizedGaps = normalizeGapList(gaps);
+
   return (
     <div className="border border-red-500/20 bg-red-500/5 rounded-lg p-3">
       <div className="flex items-center gap-2 mb-1">
@@ -15,7 +18,7 @@ export function GapHighlight({ dimensionName, score, gaps }: GapHighlightProps) 
         <span className="text-xs text-red-400 ml-auto">{score.toFixed(1)}/5.0</span>
       </div>
       <ul className="space-y-0.5">
-        {gaps.map((gap, i) => (
+        {normalizedGaps.map((gap, i) => (
           <li key={i} className="text-xs text-muted-foreground pl-6">
             • {gap}
           </li>

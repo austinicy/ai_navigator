@@ -18,7 +18,7 @@ export function FinalCTA() {
             maturity scorecard and a sequenced roadmap.
           </p>
           <Link
-            href="/assess"
+            href="/assess?new=true"
             className="mt-7 inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Start your assessment <ArrowRight className="size-4" />

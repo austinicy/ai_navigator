@@ -5,6 +5,7 @@ export interface AgoraVoiceSession {
   uid: number;
   agentId: string;
   agentUid: number;
+  sharedContext: boolean;
 }
 
 export interface AgoraTranscript {

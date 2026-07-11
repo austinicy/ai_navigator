@@ -2,7 +2,7 @@ export const agentTools = [
   {
     name: "calculate_score",
     description:
-      "Calculate a dimension score based on gathered evidence. Use when you have sufficient evidence (≥3 items) for a dimension to formalize the score.",
+      "Incrementally update a dimension score from concrete evidence in the latest user message. Score only supported criteria and include the new evidence used.",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -20,8 +20,30 @@ export const agentTools = [
           items: { type: "string" },
           description: "Identified gaps for this dimension",
         },
+        evidence: {
+          type: "array",
+          description: "New conversation evidence found in the latest user message. Use an empty array when scoring from document evidence already listed in the system context.",
+          items: {
+            type: "object",
+            properties: {
+              text: {
+                type: "string",
+                description: "Concise evidence grounded in the user's words",
+              },
+              criterionId: {
+                type: "string",
+                description: "Criterion ID supported by this evidence",
+              },
+              strength: {
+                type: "number",
+                description: "Evidence strength from 0 to 1",
+              },
+            },
+            required: ["text", "criterionId"],
+          },
+        },
       },
-      required: ["dimensionId", "criterionScores", "gaps"],
+      required: ["dimensionId", "criterionScores", "gaps", "evidence"],
     },
   },
   {

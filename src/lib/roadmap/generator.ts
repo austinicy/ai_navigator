@@ -1,6 +1,6 @@
 import { complete } from "../llm/client";
 import { calculateOverallScore } from "../assessment/scoring";
-import { AssessmentSession } from "../assessment/types";
+import { AssessmentSession, normalizeGapList } from "../assessment/types";
 import { FrameworkConfig } from "../framework/types";
 import { Roadmap, RoadmapPhase, RoadmapAction } from "./types";
 
@@ -46,12 +46,12 @@ export async function generateRoadmap(
   const scoresText = Object.entries(session.dimensions)
     .map(([id, dim]) => {
       const dimConfig = config.dimensions.find((d) => d.id === id);
-      return `${dimConfig?.name ?? id}: ${dim.score.toFixed(1)}/5.0 (confidence: ${(dim.confidence * 100).toFixed(0)}%) — Gaps: ${dim.gaps.join("; ") || "none"}`;
+      return `${dimConfig?.name ?? id}: ${dim.score.toFixed(1)}/5.0 (confidence: ${(dim.confidence * 100).toFixed(0)}%) — Gaps: ${normalizeGapList(dim.gaps).join("; ") || "none"}`;
     })
     .join("\n");
 
   const evidenceText = Object.entries(session.dimensions)
-    .flatMap(([_id, dim]) =>
+    .flatMap(([, dim]) =>
       dim.evidence.map((e) => `[${e.source}] ${e.text}`)
     )
     .join("\n");

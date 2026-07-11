@@ -10,7 +10,7 @@ import {
   calculateBenchmarkDelta,
   checkDependencyGaps,
 } from "../scoring";
-import type { DimensionAssessment, Evidence } from "../types";
+import type { DimensionAssessment } from "../types";
 
 const config = loadFramework("v2.0");
 
@@ -26,10 +26,6 @@ function makeDim(dimensionId: string, overrides: Partial<DimensionAssessment> = 
     ...overrides,
   };
 }
-function ev(dim: string, crit: string, strength = 0.5): Evidence {
-  return { id: "e", text: "t", source: "conversation", dimensionId: dim, criterionId: crit, timestamp: 1, strength, weight: 1 };
-}
-
 describe("calculateDimensionScore (confidence-weighted)", () => {
   it("returns 0 when no criteria are scored", () => {
     expect(calculateDimensionScore(makeDim("strategy"), config)).toBe(0);

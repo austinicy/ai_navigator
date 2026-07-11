@@ -18,7 +18,7 @@ export function SiteFooter() {
           <ul className="space-y-2 text-sm">
             <li><Link href="/assess" className="text-muted-foreground hover:text-foreground">Assessment</Link></li>
             <li><Link href="/methodology" className="text-muted-foreground hover:text-foreground">How it works</Link></li>
-            <li><Link href="/report?demo=true" className="text-muted-foreground hover:text-foreground">Demo report</Link></li>
+            <li><Link href="/demos" className="text-muted-foreground hover:text-foreground">Demo cases</Link></li>
           </ul>
         </div>
         <div>

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { loadFramework } from "../../framework/config";
 import { AssessmentEngine } from "../engine";
-import { buildSystemPrompt, runAgentKickoff } from "../agent";
+import { buildSystemPrompt, runAgentKickoff, runAgentTurn } from "../agent";
 import { chat } from "../../llm/client";
 
 // We mock the LLM chat() so the kickoff test doesn't need a live API key.
@@ -36,9 +36,11 @@ describe("buildSystemPrompt", () => {
 
     for (const dim of config.dimensions) {
       expect(prompt).toContain(dim.name);
-      // Each criterion name appears inside the dimension listing
+      // Each criterion name and ID appears inside the dimension listing so
+      // tool calls can address the exact configured criterion.
       for (const criterion of dim.criteria) {
         expect(prompt).toContain(criterion.name);
+        expect(prompt).toContain(criterion.id);
       }
     }
   });
@@ -179,7 +181,31 @@ describe("buildSystemPrompt", () => {
     expect(prompt).not.toContain("{NEXT_FOCUS}");
     expect(prompt).not.toContain("{ORG_PROFILE}");
     expect(prompt).not.toContain("{CURRENT_SCORES}");
+    expect(prompt).not.toContain("{COLLECTED_EVIDENCE}");
     expect(prompt).not.toContain("{INDUSTRY_BENCHMARK}");
+  });
+
+  it("includes collected document evidence in the agent context", () => {
+    const engine = new AssessmentEngine();
+    engine.addDocument({
+      filename: "strategy.pdf",
+      extractedText: "The CEO reviews AI outcomes monthly.",
+      signals: [
+        {
+          id: "document-signal",
+          text: "The CEO reviews AI outcomes monthly.",
+          source: "document",
+          dimensionId: "strategy",
+          criterionId: "executive_sponsorship",
+          timestamp: Date.now(),
+          strength: 0.8,
+        },
+      ],
+    });
+
+    const prompt = buildSystemPrompt(engine);
+    expect(prompt).toContain("[document] strategy/executive_sponsorship");
+    expect(prompt).toContain("The CEO reviews AI outcomes monthly.");
   });
 });
 
@@ -238,5 +264,55 @@ describe("runAgentKickoff", () => {
         expect.objectContaining({ role: "assistant", content: res.message }),
       ])
     );
+  });
+});
+
+describe("runAgentTurn assessment sync", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("records voice evidence and scores without persisting a duplicate assistant reply", async () => {
+    (chat as unknown as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({
+        text: "",
+        toolCalls: [
+          {
+            id: "score-1",
+            name: "calculate_score",
+            input: {
+              dimensionId: "strategy",
+              criterionScores: { executive_sponsorship: 4 },
+              gaps: [],
+              evidence: [
+                {
+                  text: "The CEO sponsors the AI program and reviews it monthly.",
+                  criterionId: "executive_sponsorship",
+                  strength: 0.9,
+                },
+              ],
+            },
+          },
+        ],
+        stopReason: "tool_use",
+      })
+      .mockResolvedValueOnce({
+        text: "This reply belongs to Agora, not the assessment chat.",
+        toolCalls: [],
+        stopReason: "end_turn",
+      });
+
+    const engine = new AssessmentEngine();
+    const response = await runAgentTurn(
+      "Our CEO sponsors the AI program and reviews it monthly.",
+      engine,
+      { assessmentOnly: true }
+    );
+
+    expect(response.assessment.signalsCollected).toBe(1);
+    expect(response.assessment.dimensions.strategy.score).toBe(4);
+    expect(engine.getSession().conversationHistory).toEqual([
+      expect.objectContaining({ role: "user" }),
+    ]);
   });
 });

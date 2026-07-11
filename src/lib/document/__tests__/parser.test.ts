@@ -2,6 +2,32 @@ import { describe, it, expect } from "vitest";
 import JSZip from "jszip";
 import { parseDocument } from "../parser";
 
+function createTextPdf(text: string): Buffer {
+  const content = `BT /F1 16 Tf 72 720 Td (${text}) Tj ET`;
+  const objects = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    `<< /Length ${Buffer.byteLength(content)} >>\nstream\n${content}\nendstream`,
+  ];
+
+  let pdf = "%PDF-1.4\n";
+  const offsets = [0];
+  objects.forEach((object, index) => {
+    offsets.push(Buffer.byteLength(pdf));
+    pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
+  });
+  const xrefOffset = Buffer.byteLength(pdf);
+  pdf += `xref\n0 ${objects.length + 1}\n`;
+  pdf += "0000000000 65535 f \n";
+  for (const offset of offsets.slice(1)) {
+    pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
+  }
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+  return Buffer.from(pdf);
+}
+
 describe("parseDocument", () => {
   it("throws on unsupported file formats", async () => {
     await expect(parseDocument(Buffer.from("hello"), "notes.txt")).rejects.toThrow(
@@ -53,20 +79,18 @@ describe("parseDocument", () => {
     expect(text).toContain("AI strategy document for Acme Corp.");
   });
 
-  it("treats .doc extension as docx (mammoth path)", async () => {
-    // Same minimal docx content but with a .doc filename. The extension switch
-    // routes both .doc and .docx to mammoth.extractRawText.
-    const zip = new JSZip();
-    zip.file(
-      "word/document.xml",
-      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
-  <w:body><w:p><w:r><w:t>Legacy doc text.</w:t></w:r></w:p></w:body>
-</w:document>`
+  it("extracts selectable text from a valid PDF", async () => {
+    const text = await parseDocument(
+      createTextPdf("AI maturity assessment strategy"),
+      "strategy.pdf"
     );
-    const buffer = Buffer.from(await zip.generateAsync({ type: "uint8array" }));
-    const text = await parseDocument(buffer, "legacy.doc");
 
-    expect(text).toContain("Legacy doc text.");
+    expect(text).toContain("AI maturity assessment strategy");
+  });
+
+  it("rejects legacy .doc because mammoth only supports DOCX", async () => {
+    await expect(parseDocument(Buffer.from("legacy"), "legacy.doc")).rejects.toThrow(
+      "Unsupported file format: doc"
+    );
   });
 });

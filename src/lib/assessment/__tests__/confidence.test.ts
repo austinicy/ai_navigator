@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
 import { AssessmentEngine } from "../engine";
-import { loadFramework } from "../../framework/config";
-
-const config = loadFramework("v2.0");
 const evidenceInput = (dimensionId: string, criterionId?: string, strength = 0.5) => ({
   text: "e", source: "conversation" as const, dimensionId, criterionId, strength,
 });

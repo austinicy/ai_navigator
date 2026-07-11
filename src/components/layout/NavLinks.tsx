@@ -2,21 +2,28 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 const LINKS = [
   { href: "/", label: "Home" },
   { href: "/methodology", label: "How it works" },
   { href: "/assess", label: "Assess" },
-  { href: "/report?demo=true", label: "Demo report" },
+  { href: "/history", label: "History" },
+  { href: "/demos", label: "Demo cases" },
 ];
 
 export function NavLinks({ className = "" }: { className?: string }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const isSavedSessionReport = pathname === "/report" && Boolean(searchParams.get("session"));
   return (
     <nav className={`flex items-center gap-1 ${className}`} aria-label="Primary">
       {LINKS.map((link) => {
-        const active = pathname === link.href || (link.href !== "/" && pathname?.startsWith(link.href.split("?")[0]));
+        const active =
+          link.href === "/history"
+              ? pathname === "/history" || isSavedSessionReport
+              : pathname === link.href ||
+                (link.href !== "/" && pathname?.startsWith(link.href.split("?")[0]));
         return (
           <Link
             key={link.href}

@@ -1,5 +1,11 @@
+import { getData } from "pdf-parse/worker";
 import { PDFParse } from "pdf-parse";
 import mammoth from "mammoth";
+
+// Next.js/Turbopack and serverless runtimes cannot reliably discover
+// PDF.js's worker path from an externalized package. The package-provided data
+// URL is self-contained and works in local Node and deployed route handlers.
+PDFParse.setWorker(getData());
 
 export async function parseDocument(
   buffer: Buffer,
@@ -10,11 +16,14 @@ export async function parseDocument(
   switch (ext) {
     case "pdf": {
       const parser = new PDFParse({ data: new Uint8Array(buffer) });
-      const result = await parser.getText();
-      return result.text;
+      try {
+        const result = await parser.getText();
+        return result.text;
+      } finally {
+        await parser.destroy();
+      }
     }
-    case "docx":
-    case "doc": {
+    case "docx": {
       const result = await mammoth.extractRawText({ buffer });
       return result.value;
     }

@@ -28,7 +28,7 @@ export function HeroSection() {
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
-              href="/assess"
+              href="/assess?new=true"
               className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
             >
               Start your assessment
@@ -41,23 +41,23 @@ export function HeroSection() {
             </Link>
           </div>
           <Link
-            href="/assess?demo=true"
+            href="/demos"
             className="mt-4 inline-block text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
           >
-            or load a demo company →
+            or continue a demo assessment →
           </Link>
         </Reveal>
 
         <Reveal delay={0.15} className="mx-auto mt-16 grid max-w-3xl gap-4 sm:grid-cols-2">
           <CTAButton
-            href="/assess"
+            href="/assess?new=true"
             icon={MessageSquare}
             title="Start a conversation"
             description="Talk to the AI consultant. It leads, probes, and scores — you just answer."
             variant="primary"
           />
           <CTAButton
-            href="/assess?mode=upload"
+            href="/assess?new=true&mode=upload"
             icon={FileText}
             title="Upload documents first"
             description="Upload strategy decks, org charts, or tech inventories for AI-powered analysis."

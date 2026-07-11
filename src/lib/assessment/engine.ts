@@ -3,12 +3,12 @@ import { loadFramework, getDimensionById } from "../framework/config";
 import { FrameworkConfig } from "../framework/types";
 import {
   calculateAIReadinessScore,
+  calculateGenAIReadinessScore,
   calculateDimensionScore,
   calculateBenchmarkDelta,
 } from "./scoring";
 import {
   AssessmentSession,
-  DimensionAssessment,
   Evidence,
   OrgProfile,
   AssessmentDelta,
@@ -19,8 +19,8 @@ export class AssessmentEngine {
   private session: AssessmentSession;
   private config: FrameworkConfig;
 
-  constructor(orgProfile?: Partial<OrgProfile>) {
-    this.config = loadFramework();
+  constructor(orgProfile?: Partial<OrgProfile>, frameworkVersion?: string) {
+    this.config = loadFramework(frameworkVersion);
     this.session = {
       id: uuidv4(),
       frameworkVersion: this.config.version,
@@ -35,6 +35,9 @@ export class AssessmentEngine {
       },
       dimensions: {},
       aiReadiness: { score: 0, components: {} },
+      genAIReadiness: this.config.genAIReadinessComponents
+        ? { score: 0, components: {}, assessedCriteria: 0, totalCriteria: 7 }
+        : undefined,
       conversationHistory: [],
       documents: [],
       isComplete: false,
@@ -101,6 +104,12 @@ export class AssessmentEngine {
       this.session.dimensions,
       this.config
     );
+    if (this.config.genAIReadinessComponents) {
+      this.session.genAIReadiness = calculateGenAIReadinessScore(
+        this.session.dimensions,
+        this.config
+      );
+    }
     this.session.updatedAt = Date.now();
   }
 
@@ -169,6 +178,7 @@ export class AssessmentEngine {
     return {
       dimensions: dims,
       aiReadiness: this.session.aiReadiness,
+      genAIReadiness: this.session.genAIReadiness,
       signalsCollected: Object.values(dims).reduce(
         (sum, d) => sum + d.evidence.length,
         0

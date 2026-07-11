@@ -1,20 +1,23 @@
 import { FrameworkConfig } from "./types";
 import v1 from "./v1.json";
 import v2 from "./v2.json";
+import v3 from "./v3";
 
 const configs: Record<string, FrameworkConfig> = {
   "v1.0": v1 as FrameworkConfig,
   "v2.0": v2 as FrameworkConfig,
+  "v3.0": v3 as FrameworkConfig,
 };
 
-export function loadFramework(version: string = "v2.0"): FrameworkConfig {
-  const config = configs[version];
+export function loadFramework(version: string = "v3.0"): FrameworkConfig {
+  const normalized = version.startsWith("v") ? version : `v${version}`;
+  const config = configs[normalized];
   if (!config) throw new Error(`Framework version ${version} not found`);
   return config;
 }
 
 export function getActiveFrameworkVersion(): string {
-  return "v2.0";
+  return "v3.0";
 }
 
 export function getDimensionById(config: FrameworkConfig, dimensionId: string) {

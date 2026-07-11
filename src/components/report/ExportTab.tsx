@@ -24,7 +24,7 @@ function escapeHtml(str: string): string {
 
 export function ExportTab({ delta, orgName }: ExportTabProps) {
   const [isGenerating, setIsGenerating] = useState(false);
-  const config = loadFramework();
+  const config = loadFramework(delta.frameworkVersion);
   const overallScore = calculateOverallScore(delta.dimensions, config);
 
   const generatePDF = async () => {

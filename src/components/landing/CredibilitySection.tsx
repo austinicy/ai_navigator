@@ -3,7 +3,7 @@ import { loadFramework } from "@/lib/framework/config";
 import { Reveal } from "./Reveal";
 
 export function CredibilitySection() {
-  const config = loadFramework("v2.0");
+  const config = loadFramework();
   const names = Object.keys(config.referenceFrameworks);
   return (
     <section className="border-y border-border bg-card/30 py-20">

@@ -67,7 +67,9 @@ describe("getAssessmentProgress", () => {
     const progress = getAssessmentProgress(null, config);
 
     expect(progress.percent).toBe(0);
-    expect(progress.informationRemaining).toBe(21);
+    expect(progress.informationRemaining).toBe(
+      config.dimensions.length * config.evidenceThreshold
+    );
     expect(progress.label).toBe("Collecting");
   });
 
@@ -80,8 +82,8 @@ describe("getAssessmentProgress", () => {
       config
     );
 
-    expect(progress.percent).toBe(19);
-    expect(progress.informationRemaining).toBe(17);
+    expect(progress.percent).toBe(17);
+    expect(progress.informationRemaining).toBe(20);
     expect(progress.dimensionsAssessed).toBe(1);
     expect(progress.label).toBe("Collecting");
   });

@@ -7,12 +7,13 @@ import { ScoreSimulator } from "@/components/methodology/ScoreSimulator";
 import { DependencyMap } from "@/components/methodology/DependencyMap";
 import { ReferencesCarousel } from "@/components/methodology/ReferencesCarousel";
 import { WhyItMatters } from "@/components/methodology/WhyItMatters";
+import { GenAIReadinessSection } from "@/components/methodology/GenAIReadinessSection";
 import { loadFramework } from "@/lib/framework/config";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 export default function MethodologyPage() {
-  const config = loadFramework("v2.0");
+  const config = loadFramework();
   return (
     <SiteShell>
       <section className="py-16 md:py-20">
@@ -33,6 +34,7 @@ export default function MethodologyPage() {
         </Reveal>
       </section>
       <DimensionMatrix />
+      <GenAIReadinessSection />
       <ScoringWalkthrough />
       <section className="py-16">
         <Reveal className="mx-auto mb-8 max-w-2xl text-center">

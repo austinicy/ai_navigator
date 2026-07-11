@@ -11,7 +11,7 @@ interface EvidenceListProps {
 
 export function EvidenceList({ delta }: EvidenceListProps) {
   const [isExpanded, setIsExpanded] = useState(true);
-  const config = loadFramework();
+  const config = loadFramework(delta?.frameworkVersion);
   const labels = useMemo(() => {
     const dimensionNames: Record<string, string> = {};
     const criterionNames: Record<string, string> = {};

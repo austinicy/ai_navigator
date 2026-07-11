@@ -25,7 +25,7 @@ function initials(name: string): string {
 }
 
 export function ReferencesCarousel() {
-  const config = loadFramework("v2.0");
+  const config = loadFramework();
   const entries = Object.entries(config.referenceFrameworks);
   const scrollerRef = useRef<HTMLDivElement>(null);
 

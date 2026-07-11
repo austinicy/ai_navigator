@@ -16,7 +16,7 @@ interface ScorecardPanelProps {
 }
 
 export function ScorecardPanel({ delta, documentCount }: ScorecardPanelProps) {
-  const config = loadFramework();
+  const config = loadFramework(delta?.frameworkVersion);
   const overallScore = delta
     ? calculateOverallScore(delta.dimensions, config)
     : 0;
@@ -44,7 +44,7 @@ export function ScorecardPanel({ delta, documentCount }: ScorecardPanelProps) {
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
             Dimensions
           </h3>
-          {config.dimensions.map((dim) => (
+          {config.dimensions.filter((dim) => dim.includeInOverall !== false).map((dim) => (
             <DimensionBar
               key={dim.id}
               dimensionId={dim.id}
@@ -54,7 +54,10 @@ export function ScorecardPanel({ delta, documentCount }: ScorecardPanelProps) {
           ))}
         </div>
 
-        <AIReadinessScore aiReadiness={delta?.aiReadiness} />
+        <AIReadinessScore
+          aiReadiness={delta?.aiReadiness}
+          genAIReadiness={delta?.genAIReadiness}
+        />
 
         <EvidenceList delta={delta} />
       </div>

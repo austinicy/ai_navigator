@@ -6,7 +6,7 @@ import { loadFramework } from "@/lib/framework/config";
 import { ChevronDown, Target } from "lucide-react";
 
 export function DimensionMatrix() {
-  const config = loadFramework("v2.0");
+  const config = loadFramework();
   const [open, setOpen] = useState<string | null>(config.dimensions[0]?.id ?? null);
   const totalCriteria = config.dimensions.reduce((n, d) => n + d.criteria.length, 0);
 
@@ -42,9 +42,9 @@ export function DimensionMatrix() {
                     <div key={c.id} className="rounded-lg border border-border/60 bg-muted/20 p-3">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-sm font-medium text-foreground">{c.name}</span>
-                        {c.benchmarkTarget !== undefined && (
+                        {(c.targetLevel ?? c.benchmarkTarget) !== undefined && (
                           <span className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-medium text-accent">
-                            <Target className="size-2.5" /> peer L{c.benchmarkTarget}
+                            <Target className="size-2.5" /> {c.targetLevel ? "target" : "peer"} L{c.targetLevel ?? c.benchmarkTarget}
                           </span>
                         )}
                       </div>

@@ -4,10 +4,10 @@
 import { Reveal } from "./Reveal";
 
 const STATS = [
-  { value: "7", label: "Maturity dimensions", sub: "30 criteria, 5 levels each" },
+  { value: "7+1", label: "Assessment sections", sub: "7 core + GenAI & agentic readiness" },
   { value: "15 min", label: "Average assessment", sub: "replaces weeks of surveys" },
-  { value: "11", label: "Reference frameworks", sub: "synthesized, not invented" },
-  { value: "0–100", label: "AI Readiness score", sub: "composite, cross-cutting" },
+  { value: "17", label: "Primary sources", sub: "standards, risk, architecture, research" },
+  { value: "3", label: "Decision scores", sub: "digital, AI, and GenAI readiness" },
 ];
 
 export function StatTiles() {

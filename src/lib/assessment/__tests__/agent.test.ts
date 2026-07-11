@@ -30,7 +30,7 @@ describe("buildSystemPrompt", () => {
     vi.clearAllMocks();
   });
 
-  it("interpolates all 7 dimension names with their criteria", () => {
+  it("interpolates every configured section name with its criteria", () => {
     const engine = new AssessmentEngine();
     const prompt = buildSystemPrompt(engine);
 
@@ -43,18 +43,18 @@ describe("buildSystemPrompt", () => {
     }
   });
 
-  it("shows 0 assessed and 7 remaining for a fresh engine", () => {
+  it("shows zero assessed and all sections remaining for a fresh engine", () => {
     const engine = new AssessmentEngine();
     const prompt = buildSystemPrompt(engine);
 
-    expect(prompt).toContain("Dimensions assessed: 0/7");
-    expect(prompt).toContain("Dimensions remaining: 7");
+    expect(prompt).toContain(`Sections assessed: 0/${config.dimensions.length}`);
+    expect(prompt).toContain(`Dimensions remaining: ${config.dimensions.length}`);
   });
 
-  it("includes the framework version and all 7 dimensions", () => {
+  it("includes the active framework version and core dimensions", () => {
     const engine = new AssessmentEngine();
     const prompt = buildSystemPrompt(engine);
-    expect(prompt).toContain("Framework v2.0");
+    expect(prompt).toContain(`Framework v${config.version}`);
     expect(prompt).toContain("Strategy & Leadership");
     expect(prompt).toContain("Customer Experience");
   });
@@ -160,8 +160,8 @@ describe("buildSystemPrompt", () => {
 
     const prompt = buildSystemPrompt(engine);
 
-    expect(prompt).toContain("Dimensions assessed: 1/7");
-    expect(prompt).toContain("Dimensions remaining: 6");
+    expect(prompt).toContain(`Sections assessed: 1/${config.dimensions.length}`);
+    expect(prompt).toContain(`Dimensions remaining: ${config.dimensions.length - 1}`);
     // Next unassessed dimension is the second one (technology).
     const nextId = config.dimensions[1].id;
     expect(prompt).toContain(`Next focus: ${nextId}`);
@@ -174,6 +174,7 @@ describe("buildSystemPrompt", () => {
     expect(prompt).not.toContain("{FRAMEWORK_VERSION}");
     expect(prompt).not.toContain("{FRAMEWORK_DIMENSIONS}");
     expect(prompt).not.toContain("{DIMENSIONS_ASSESSED}");
+    expect(prompt).not.toContain("{DIMENSION_COUNT}");
     expect(prompt).not.toContain("{DIMENSIONS_REMAINING}");
     expect(prompt).not.toContain("{NEXT_FOCUS}");
     expect(prompt).not.toContain("{ORG_PROFILE}");

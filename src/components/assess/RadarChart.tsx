@@ -18,7 +18,7 @@ interface RadarChartProps {
 export function AssessmentRadarChart({ delta }: RadarChartProps) {
   const config = loadFramework();
 
-  const data = config.dimensions.map((dim) => ({
+  const data = config.dimensions.filter((dim) => dim.includeInOverall !== false).map((dim) => ({
     dimension: dim.name.split(" ").slice(0, 2).join("\n"),
     fullName: dim.name,
     score: delta?.dimensions[dim.id]?.score ?? 0,

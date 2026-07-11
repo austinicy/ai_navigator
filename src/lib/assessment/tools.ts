@@ -77,7 +77,7 @@ export const agentTools = [
   {
     name: "generate_roadmap",
     description:
-      "Generate a personalized transformation roadmap. Use ONLY when assessment is complete (all 7 dimensions assessed with sufficient confidence).",
+      "Generate a personalized transformation roadmap. Use ONLY when every configured assessment section has sufficient confidence.",
     input_schema: {
       type: "object" as const,
       properties: {

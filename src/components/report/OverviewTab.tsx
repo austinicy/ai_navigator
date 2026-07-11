@@ -12,7 +12,7 @@ interface OverviewTabProps {
 }
 
 export function OverviewTab({ delta }: OverviewTabProps) {
-  const config = loadFramework();
+  const config = loadFramework(delta.frameworkVersion);
   const overallScore = calculateOverallScore(delta.dimensions, config);
   const criticalGaps = Object.entries(delta.dimensions)
     .filter(([_, d]) => d.score > 0 && d.score < 3 && d.gaps.length > 0)
@@ -28,13 +28,18 @@ export function OverviewTab({ delta }: OverviewTabProps) {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-3 gap-4">
+      <div className={`grid gap-4 ${delta.genAIReadiness ? "grid-cols-2 lg:grid-cols-4" : "grid-cols-3"}`}>
         <GradientCard>
           <ScoreBadge score={overallScore} max={5} label="Digital Maturity" />
         </GradientCard>
         <GradientCard>
           <ScoreBadge score={delta.aiReadiness.score} max={100} label="AI Readiness" />
         </GradientCard>
+        {delta.genAIReadiness && (
+          <GradientCard>
+            <ScoreBadge score={delta.genAIReadiness.score} max={100} label="GenAI Readiness" />
+          </GradientCard>
+        )}
         <GradientCard>
           <ScoreBadge score={industryBenchmark} max={5} label="Industry Avg (est.)" size="sm" />
           <p className="text-[10px] text-muted-foreground/50 mt-1 text-center">AI-estimated benchmark</p>

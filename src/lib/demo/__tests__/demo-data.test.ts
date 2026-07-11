@@ -9,7 +9,7 @@ import type {
 // Load the real framework so we can cross-check every criterionId used in the
 // demo data against v2.json. A typo here would make the demo report render "—"
 // for that criterion, so this is a high-value guard.
-const config = loadFramework();
+const config = loadFramework("v2.0");
 
 // Build a lookup: dimensionId -> Set of valid criterionIds from v2.json
 const validCriteriaByDimension: Record<string, Set<string>> = {};

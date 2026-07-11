@@ -9,7 +9,7 @@ const STEPS = [
     n: "01",
     icon: MessagesSquare,
     title: "Converse with the AI consultant",
-    body: "The agent leads — it greets you, asks targeted questions about your organization, and connects insights across the 7 dimensions. No surveys, no checkboxes.",
+    body: "The agent leads — it asks targeted questions across seven core dimensions plus GenAI and agentic readiness, connecting evidence instead of collecting checkbox answers.",
   },
   {
     n: "02",

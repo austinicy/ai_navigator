@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { loadFramework } from "@/lib/framework/config";
 
 // Ring layout positions for 7 dimensions (percentages of the viewBox).
-const ORDER = ["strategy", "technology", "data_ai", "ai_governance", "culture", "operations", "customer"];
+const ORDER = ["strategy", "technology", "data_ai", "ai_governance", "culture", "operations", "customer", "genai"];
 const POSITIONS: Record<string, { x: number; y: number }> = {
   strategy: { x: 50, y: 8 },
   technology: { x: 88, y: 30 },
@@ -14,10 +14,11 @@ const POSITIONS: Record<string, { x: number; y: number }> = {
   culture: { x: 34, y: 95 },
   operations: { x: 8, y: 72 },
   customer: { x: 12, y: 30 },
+  genai: { x: 50, y: 52 },
 };
 
 export function DependencyMap() {
-  const config = useMemo(() => loadFramework("v2.0"), []);
+  const config = useMemo(() => loadFramework(), []);
   const [active, setActive] = useState<string | null>(null);
 
   // Build edges from criterion dependsOn: "dim.crit" → "dim.crit"

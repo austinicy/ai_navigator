@@ -3,8 +3,8 @@ import type { AssessmentDelta, DimensionAssessment } from "../assessment/types";
 import { getDemoSession } from "./demo-data";
 
 export function getDemoDelta(): AssessmentDelta {
-  const config = loadFramework();
   const session = getDemoSession();
+  const config = loadFramework(session.frameworkVersion ?? "v2.0");
   const dimensions = session.dimensions as Record<string, DimensionAssessment>;
   const signalsCollected = Object.values(dimensions).reduce(
     (sum, dimension) => sum + dimension.evidence.length,

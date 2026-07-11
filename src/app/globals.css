@@ -154,3 +154,36 @@
     box-shadow: none;
   }
 }
+@keyframes methodology-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(36px, -24px, 0) scale(1.08); }
+}
+
+@keyframes methodology-spin {
+  to { transform: rotate(360deg); }
+}
+
+.methodology-hero {
+  background:
+    radial-gradient(circle at 18% 18%, color-mix(in oklab, var(--primary) 14%, transparent), transparent 34%),
+    radial-gradient(circle at 82% 68%, color-mix(in oklab, var(--accent) 12%, transparent), transparent 36%),
+    linear-gradient(180deg, color-mix(in oklab, var(--background) 94%, var(--primary)), var(--background));
+}
+
+.methodology-grid {
+  background-image:
+    linear-gradient(color-mix(in oklab, var(--border) 50%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklab, var(--border) 50%, transparent) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: linear-gradient(to bottom, black, transparent 90%);
+}
+
+.methodology-orb { position: absolute; border-radius: 9999px; filter: blur(54px); animation: methodology-drift 9s ease-in-out infinite; }
+.methodology-orb-one { left: 8%; top: 16%; width: 180px; height: 180px; background: color-mix(in oklab, var(--primary) 18%, transparent); }
+.methodology-orb-two { bottom: 8%; right: 10%; width: 240px; height: 240px; background: color-mix(in oklab, var(--accent) 14%, transparent); animation-delay: -4s; }
+.methodology-spin { animation: methodology-spin 24s linear infinite; }
+.methodology-spin-reverse { animation: methodology-spin 18s linear infinite reverse; }
+
+@media (prefers-reduced-motion: reduce) {
+  .methodology-orb, .methodology-spin, .methodology-spin-reverse { animation: none; }
+}
